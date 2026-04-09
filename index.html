@@ -99,6 +99,25 @@
                 localStorage.setItem('sheet_questions', JSON.stringify(filtered));
                 data = { success: true };
               }
+              if (action === 'deleteAllQuestions') {
+                localStorage.setItem('sheet_questions', '[]');
+                data = { success: true };
+              }
+              if (action === 'deleteQuestionGroup') {
+                const current = JSON.parse(localStorage.getItem('sheet_questions') || '[]');
+                const filtered = current.filter(q => !(q.typeRating === payload.typeRating && q.typeExam === payload.typeExam && q.modelSoal === payload.modelSoal));
+                localStorage.setItem('sheet_questions', JSON.stringify(filtered));
+                data = { success: true };
+              }
+              if (action === 'updateQuestion') {
+                const current = JSON.parse(localStorage.getItem('sheet_questions') || '[]');
+                const index = current.findIndex(q => q.id === payload.id);
+                if (index > -1) {
+                  current[index] = { ...current[index], ...payload };
+                  localStorage.setItem('sheet_questions', JSON.stringify(current));
+                }
+                data = { success: true };
+              }
               if (action === 'addAssignment') {
                 const current = JSON.parse(localStorage.getItem('sheet_assignments') || '[]');
                 payload.id = Date.now().toString();
@@ -116,7 +135,7 @@
                 data = { success: true };
               }
               resolve(data);
-            }, 500); 
+            }, 100); 
           });
         }
 
@@ -142,18 +161,56 @@
       };
 
       const loadInitialData = async () => {
-        setIsLoading(true);
+        // Cek Cache Lokal agar loading terasa instan (Stale-while-revalidate)
+        const cachedUsers = JSON.parse(localStorage.getItem('cache_users'));
+        const cachedQuestions = JSON.parse(localStorage.getItem('cache_questions'));
+        const cachedAssignments = JSON.parse(localStorage.getItem('cache_assignments'));
+
+        if (cachedUsers && cachedQuestions && cachedAssignments) {
+          setUsers(cachedUsers);
+          setQuestions(cachedQuestions);
+          setAssignments(cachedAssignments);
+          setIsLoading(false); // Langsung hilangkan layar loading
+        } else {
+          setIsLoading(true);
+        }
+
         try {
           const [fetchedUsers, fetchedQuestions, fetchedAssignments] = await Promise.all([
             fetchSheetData('getUsers'),
             fetchSheetData('getQuestions'),
             fetchSheetData('getAssignments')
           ]);
+          
+          // Standarisasi key (Mengatasi perbedaan nama header di Spreadsheet seperti "Correct Answer" vs "correctAnswer")
+          const stdQuestions = (fetchedQuestions || []).map(q => ({
+            ...q,
+            correctAnswer: (q.correctAnswer || q['Correct Answer'] || q.jawaban || q.Jawaban || q['Kunci Jawaban'] || '').toString().trim().toUpperCase(),
+            optA: q.optA || q.opta || q['Opt A'] || q.opsiA || q['Opsi A'] || '',
+            optB: q.optB || q.optb || q['Opt B'] || q.opsiB || q['Opsi B'] || '',
+            optC: q.optC || q.optc || q['Opt C'] || q.opsiC || q['Opsi C'] || '',
+            optD: q.optD || q.optd || q['Opt D'] || q.opsiD || q['Opsi D'] || '',
+            text: q.text || q.Text || q.pertanyaan || q.Pertanyaan || q.Soal || q.soal || '',
+            typeRating: q.typeRating || q['Type Rating'] || q.typerating || '',
+            typeExam: q.typeExam || q['Type Exam'] || q.typeexam || 'Initial',
+            modelSoal: q.modelSoal || q['Model Soal'] || q.modelsoal || 'MODEL A',
+            section: q.section || q.Section || q.bagian || 'General'
+          }));
+
           setUsers(fetchedUsers || []);
-          setQuestions(fetchedQuestions || []);
+          setQuestions(stdQuestions);
           setAssignments(fetchedAssignments || []);
+
+          // Simpan pembaruan ke cache untuk kunjungan berikutnya
+          localStorage.setItem('cache_users', JSON.stringify(fetchedUsers || []));
+          localStorage.setItem('cache_questions', JSON.stringify(stdQuestions));
+          localStorage.setItem('cache_assignments', JSON.stringify(fetchedAssignments || []));
         } catch (err) {
-          showToast("Gagal memuat data dari Spreadsheet", "error");
+          if (!cachedUsers) {
+            showToast("Gagal memuat data dari Spreadsheet", "error");
+          } else {
+            console.warn("Menggunakan data dari cache lokal (Offline)");
+          }
         } finally {
           setIsLoading(false);
         }
@@ -637,6 +694,11 @@
       const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
       const [formData, setFormData] = useState({ typeRating: TYPE_RATINGS[0], typeExam: 'Initial', modelSoal: 'MODEL A', text: '', optA: '', optB: '', optC: '', optD: '', correctAnswer: 'A' });
 
+      // State untuk grup & edit
+      const [expandedGroup, setExpandedGroup] = useState(null);
+      const [editingQId, setEditingQId] = useState(null);
+      const [editFormData, setEditFormData] = useState(null);
+
       const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSaving(true);
@@ -654,11 +716,52 @@
       };
 
       const handleDelete = async (id) => {
+        if (!window.confirm("Yakin ingin menghapus soal ini?")) return;
         try {
           await fetchSheetData('deleteQuestion', { id });
           showToast('Soal dihapus', 'success');
           refreshData();
         } catch (err) { showToast('Gagal menghapus soal', 'error'); }
+      };
+
+      const handleDeleteAll = async () => {
+        if (!window.confirm("PERINGATAN: Anda yakin ingin menghapus SEMUA soal di database? Tindakan ini tidak dapat dibatalkan!")) return;
+        try {
+          await fetchSheetData('deleteAllQuestions');
+          showToast('Seluruh database soal berhasil dihapus', 'success');
+          refreshData();
+        } catch (err) { showToast('Gagal menghapus seluruh soal', 'error'); }
+      };
+
+      const handleDeleteGroup = async (group) => {
+        if (!window.confirm(`Yakin ingin menghapus seluruh ${group.questions.length} soal pada grup ${group.title}?`)) return;
+        try {
+          await fetchSheetData('deleteQuestionGroup', {
+            typeRating: group.typeRating,
+            typeExam: group.typeExam,
+            modelSoal: group.modelSoal
+          });
+          showToast(`Grup soal ${group.title} berhasil dihapus`, 'success');
+          setExpandedGroup(null);
+          refreshData();
+        } catch (err) { showToast('Gagal menghapus grup soal', 'error'); }
+      };
+
+      const handleEditClick = (q) => {
+        setEditingQId(q.id);
+        setEditFormData({ ...q });
+      };
+
+      const handleUpdateSubmit = async (e) => {
+        e.preventDefault();
+        try {
+          await fetchSheetData('updateQuestion', editFormData);
+          showToast('Soal berhasil diperbarui', 'success');
+          setEditingQId(null);
+          refreshData();
+        } catch (err) {
+          showToast('Gagal memperbarui soal', 'error');
+        }
       };
 
       const handleImport = async () => {
@@ -679,8 +782,8 @@
           const qMatch = line.match(/^\d+[\.\)]\s*(.*)/); 
           // Deteksi "A. Opsi"
           const optMatch = line.match(/^([A-D])[\.\)]\s*(.*)/i);
-          // Deteksi "Correct answer : C"
-          const ansMatch = line.match(/^Correct\s+answer\s*:\s*([A-D])/i);
+          // Deteksi "Correct answer : C" atau "Jawaban : C"
+          const ansMatch = line.match(/^(?:Correct\s+answer|Jawaban(?:\s+Benar)?|Kunci(?:\s+Jawaban)?)\s*[:\.]\s*([A-D])/i);
 
           if (ansMatch) {
             currentQ.correctAnswer = ansMatch[1].toUpperCase();
@@ -897,54 +1000,165 @@
           )}
 
           <div className="space-y-4">
-            {TYPE_RATINGS.map(tr => {
-              const trQuestions = questions.filter(q => q.typeRating === tr);
-              if (trQuestions.length === 0) return null;
-              return (
-                <div key={tr} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                  <div className="bg-slate-100 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-                    <span className="font-bold text-slate-800">Type Rating: {tr}</span>
-                    <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full font-bold">{trQuestions.length} Soal</span>
+            {questions.length > 0 && (
+              <div className="flex justify-end mb-2 animate-fade-in-up">
+                <button onClick={handleDeleteAll} className="text-xs font-bold bg-red-100 text-red-600 hover:bg-red-200 px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-sm border border-red-200">
+                  <Icon name="trash-can" size={14}/> Hapus Seluruh Database Soal
+                </button>
+              </div>
+            )}
+            {(() => {
+              // 1. Mengelompokkan Soal
+              const groupedQuestions = {};
+              questions.forEach(q => {
+                const tr = q.typeRating || 'Unknown';
+                const te = q.typeExam || 'Initial';
+                const ms = q.modelSoal || 'MODEL A';
+                const key = `${tr}|${te}|${ms}`;
+                
+                if (!groupedQuestions[key]) {
+                  groupedQuestions[key] = {
+                    title: `${te} ${tr} - ${ms}`,
+                    typeRating: tr,
+                    typeExam: te,
+                    modelSoal: ms,
+                    questions: []
+                  };
+                }
+                groupedQuestions[key].questions.push(q);
+              });
+
+              const groupedKeys = Object.keys(groupedQuestions);
+
+              if (groupedKeys.length === 0) {
+                return (
+                  <div className="text-center p-8 bg-white rounded-xl shadow-sm border border-slate-200 text-slate-500">
+                    Belum ada soal tersimpan di Question Bank.
                   </div>
-                  <div className="divide-y divide-slate-100">
-                    {trQuestions.map((q, idx) => (
-                      <div key={q.id || idx} className="p-4 flex gap-4 hover:bg-slate-50">
-                        <div className="font-bold text-slate-400">{idx + 1}.</div>
-                        <div className="flex-1">
-                          <div className="flex flex-wrap gap-2 mb-2 items-center">
-                            {q.section && q.section !== 'General' && (
-                              <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded uppercase tracking-wider inline-block">
-                                {q.section}
-                              </span>
-                            )}
-                            {q.typeExam && (
-                              <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded uppercase tracking-wider inline-block">
-                                {q.typeExam}
-                              </span>
-                            )}
-                            {q.modelSoal && (
-                              <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded uppercase tracking-wider inline-block">
-                                {q.modelSoal}
-                              </span>
-                            )}
-                          </div>
-                          <p className="font-semibold text-slate-800 mb-2">{q.text}</p>
-                          <div className="grid grid-cols-2 gap-2 text-sm text-slate-600">
-                            <div className={q.correctAnswer === 'A' ? 'font-bold text-green-600' : ''}>A. {q.optA}</div>
-                            <div className={q.correctAnswer === 'B' ? 'font-bold text-green-600' : ''}>B. {q.optB}</div>
-                            <div className={q.correctAnswer === 'C' ? 'font-bold text-green-600' : ''}>C. {q.optC}</div>
-                            <div className={q.correctAnswer === 'D' ? 'font-bold text-green-600' : ''}>D. {q.optD}</div>
-                          </div>
+                );
+              }
+
+              // 2. Menampilkan List Grup
+              return groupedKeys.map(key => {
+                const group = groupedQuestions[key];
+                const isExpanded = expandedGroup === key;
+
+                return (
+                  <div key={key} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    {/* Header Grup (Dapat di-klik) */}
+                    <div 
+                      className="bg-slate-50 hover:bg-slate-100 px-6 py-4 cursor-pointer flex justify-between items-center transition-colors border-b border-transparent"
+                      onClick={() => setExpandedGroup(isExpanded ? null : key)}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-90 text-blue-600' : 'text-slate-400'}`}>
+                          <Icon name="chevron-right" />
                         </div>
-                        <button onClick={() => handleDelete(q.id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg h-fit transition-colors" title="Hapus Soal">
-                          <Icon name="trash-can" size={18} />
-                        </button>
+                        <div>
+                          <h4 className="font-bold text-slate-800 text-lg uppercase tracking-wide">
+                            {group.title}
+                          </h4>
+                        </div>
                       </div>
-                    ))}
+                      <span className="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1 rounded-full shadow-sm">
+                        {group.questions.length} Soal
+                      </span>
+                    </div>
+
+                    {/* Konten Soal (Expanded) */}
+                    {isExpanded && (
+                      <div className="divide-y divide-slate-100 border-t border-slate-200 bg-white">
+                        <div className="bg-red-50/50 px-6 py-3 flex justify-between items-center border-b border-red-100">
+                          <span className="text-xs text-slate-500 font-semibold">Kelola Grup ini:</span>
+                          <button onClick={() => handleDeleteGroup(group)} className="text-xs font-bold bg-red-500 text-white hover:bg-red-600 px-3 py-1.5 rounded shadow-sm transition-colors flex items-center gap-1">
+                            <Icon name="trash-can" size={12}/> Hapus Semua Soal di Grup Ini ({group.questions.length})
+                          </button>
+                        </div>
+                        {group.questions.map((q, idx) => (
+                          <div key={q.id || idx} className="p-6 hover:bg-slate-50 transition-colors">
+                            
+                            {editingQId === q.id ? (
+                              /* --- FORM EDIT SOAL --- */
+                              <form onSubmit={handleUpdateSubmit} className="bg-white p-5 rounded-lg border border-blue-300 shadow-md space-y-4 animate-fade-in-up">
+                                <div className="flex justify-between items-center mb-2 border-b border-slate-100 pb-2">
+                                  <h4 className="font-bold text-blue-700 flex items-center gap-2">
+                                    <Icon name="pen-to-square" size={16}/> Edit Soal #{idx + 1}
+                                  </h4>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="col-span-full">
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Section (Opsional, cth: AIRCRAFT GENERAL)</label>
+                                    <input type="text" className="w-full px-3 py-2 rounded-md border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none"
+                                      value={editFormData.section || ''} onChange={e => setEditFormData({...editFormData, section: e.target.value})} />
+                                  </div>
+                                  <div className="col-span-full">
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Pertanyaan</label>
+                                    <textarea rows="3" required className="w-full px-3 py-2 rounded-md border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none"
+                                      value={editFormData.text} onChange={e => setEditFormData({...editFormData, text: e.target.value})} />
+                                  </div>
+                                  {['A', 'B', 'C', 'D'].map((opt) => (
+                                    <div key={opt}>
+                                      <label className="block text-xs font-bold text-slate-700 mb-1">Opsi {opt}</label>
+                                      <input type="text" required className="w-full px-3 py-2 rounded-md border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none"
+                                        value={editFormData[`opt${opt}`]} onChange={e => setEditFormData({...editFormData, [`opt${opt}`]: e.target.value})} />
+                                    </div>
+                                  ))}
+                                  <div className="col-span-full">
+                                    <label className="block text-xs font-bold text-slate-700 mb-1">Jawaban Benar</label>
+                                    <div className="flex gap-4">
+                                      {['A', 'B', 'C', 'D'].map((opt) => (
+                                        <label key={`editAns-${opt}`} className="flex items-center gap-2 cursor-pointer">
+                                          <input type="radio" name={`editAns-${q.id}`} value={opt} checked={editFormData.correctAnswer?.trim().toUpperCase() === opt}
+                                            onChange={e => setEditFormData({...editFormData, correctAnswer: e.target.value})} className="w-4 h-4 text-blue-600" />
+                                          <span className="font-bold text-slate-700">{opt}</span>
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                                  <button type="button" onClick={() => setEditingQId(null)} className="px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 rounded-lg transition-colors">Batal</button>
+                                  <button type="submit" className="px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm flex items-center gap-2">
+                                    <Icon name="check" size={14}/> Simpan Perubahan
+                                  </button>
+                                </div>
+                              </form>
+                            ) : (
+                              /* --- MODE VIEW SOAL --- */
+                              <div className="flex gap-4">
+                                <div className="font-bold text-slate-400 mt-1">{idx + 1}.</div>
+                                <div className="flex-1">
+                                  {q.section && q.section !== 'General' && (
+                                    <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded uppercase tracking-wider inline-block mb-3 shadow-sm border border-blue-200">
+                                      {q.section}
+                                    </span>
+                                  )}
+                                  <p className="font-semibold text-slate-800 mb-4 whitespace-pre-wrap">{q.text}</p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm text-slate-600">
+                                    <div className={`p-3 rounded-lg border-2 ${q.correctAnswer?.trim().toUpperCase() === 'A' ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-slate-100 bg-white'}`}>A. {q.optA}</div>
+                                    <div className={`p-3 rounded-lg border-2 ${q.correctAnswer?.trim().toUpperCase() === 'B' ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-slate-100 bg-white'}`}>B. {q.optB}</div>
+                                    <div className={`p-3 rounded-lg border-2 ${q.correctAnswer?.trim().toUpperCase() === 'C' ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-slate-100 bg-white'}`}>C. {q.optC}</div>
+                                    <div className={`p-3 rounded-lg border-2 ${q.correctAnswer?.trim().toUpperCase() === 'D' ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-slate-100 bg-white'}`}>D. {q.optD}</div>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col gap-2 shrink-0 border-l border-slate-100 pl-4 ml-2">
+                                  <button onClick={(e) => { e.stopPropagation(); handleEditClick(q); }} className="text-blue-500 hover:bg-blue-100 hover:text-blue-700 p-2.5 rounded-lg transition-colors flex items-center justify-center bg-blue-50" title="Edit Soal">
+                                    <Icon name="pen-to-square" size={16} />
+                                  </button>
+                                  <button onClick={(e) => { e.stopPropagation(); handleDelete(q.id); }} className="text-red-500 hover:bg-red-100 hover:text-red-700 p-2.5 rounded-lg transition-colors flex items-center justify-center bg-red-50" title="Hapus Soal">
+                                    <Icon name="trash-can" size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         </div>
       );
@@ -1133,7 +1347,7 @@
         let correct = 0;
         examQuestions.forEach(q => {
           const questionId = q.id || q.text; 
-          if (answers[questionId] === q.correctAnswer) correct++;
+          if (answers[questionId] === q.correctAnswer?.trim().toUpperCase()) correct++;
         });
         
         const score = (correct / examQuestions.length) * 100;
