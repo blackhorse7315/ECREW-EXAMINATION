@@ -240,7 +240,7 @@
           <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
             {view === 'login' && <LoginView setView={setView} setAppUser={setAppUser} users={users} showToast={showToast} fetchSheetData={fetchSheetData} />}
             {view === 'register' && <RegisterView setView={setView} users={users} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
-            {view === 'admin' && appUser?.role === 'admin' && <AdminDashboard users={users} questions={questions} assignments={assignments} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
+            {view === 'admin' && ['admin', 'instructor'].includes(appUser?.role) && <AdminDashboard appUser={appUser} users={users} questions={questions} assignments={assignments} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
             {view === 'user' && appUser?.role === 'user' && <UserDashboard appUser={appUser} assignments={assignments} setView={setView} />}
             {view === 'exam' && appUser?.role === 'user' && <ExamRunner appUser={appUser} assignments={assignments} questions={questions} setView={setView} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
           </main>
@@ -288,11 +288,23 @@
           return;
         }
 
+        if (username === 'instructor' && password === 'instructor123') {
+          setAppUser({ role: 'instructor', name: 'Chief Instructor', username: 'instructor' });
+          setView('admin');
+          showToast('Welcome, Instructor', 'success');
+          setIsLoggingIn(false);
+          return;
+        }
+
         const user = users.find(u => u.username === username && u.password === password);
         if (user) {
           fetchSheetData('logLogin', { username, password });
-          setAppUser({ ...user, role: 'user' });
-          setView('user');
+          
+          // Cek apakah user memiliki pangkat instruktur
+          const isInstructor = ['CCP', 'FI', 'GI'].includes(user.rank);
+          
+          setAppUser({ ...user, role: isInstructor ? 'instructor' : 'user' });
+          setView(isInstructor ? 'admin' : 'user');
           showToast(`Welcome back, ${user.name}`, 'success');
         } else {
           showToast('Username atau password salah', 'error');
@@ -441,8 +453,9 @@
       );
     }
 
-    function AdminDashboard({ users, questions, assignments, showToast, fetchSheetData, refreshData }) {
-      const [activeTab, setActiveTab] = useState('users'); 
+    function AdminDashboard({ appUser, users, questions, assignments, showToast, fetchSheetData, refreshData }) {
+      const isAdmin = appUser?.role === 'admin';
+      const [activeTab, setActiveTab] = useState(isAdmin ? 'users' : 'questions'); 
 
       return (
         <div className="flex flex-col md:flex-row gap-6">
@@ -450,14 +463,16 @@
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden sticky top-6">
               <div className="p-4 bg-slate-50 border-b border-slate-200">
                 <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                  <Icon name="book-open" size={18} className="text-yellow-600"/>
-                  Menu Admin
+                  <Icon name={isAdmin ? "book-open" : "chalkboard-user"} size={18} className="text-yellow-600"/>
+                  Menu {isAdmin ? 'Admin' : 'Instructor'}
                 </h3>
               </div>
               <div className="p-2 space-y-1">
-                <button onClick={() => setActiveTab('users')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'users' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
-                  <Icon name="users" size={18} /> Daftar User & Assign
-                </button>
+                {isAdmin && (
+                  <button onClick={() => setActiveTab('users')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'users' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
+                    <Icon name="users" size={18} /> Daftar User & Assign
+                  </button>
+                )}
                 <button onClick={() => setActiveTab('questions')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'questions' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
                   <Icon name="clipboard-list" size={18} /> Question Bank
                 </button>
@@ -473,7 +488,7 @@
           </div>
 
           <div className="flex-1">
-            {activeTab === 'users' && <AdminUsers users={users} questions={questions} assignments={assignments} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
+            {activeTab === 'users' && isAdmin && <AdminUsers users={users} questions={questions} assignments={assignments} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
             {activeTab === 'questions' && <AdminQuestions questions={questions} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
             {activeTab === 'results' && <AdminResults assignments={assignments} users={users} />}
           </div>
@@ -482,16 +497,29 @@
     }
 
     function AdminUsers({ users, questions, assignments, showToast, fetchSheetData, refreshData }) {
-      const handleAssign = async (user) => {
-        const typeRatingQuestions = questions.filter(q => q.typeRating === user.typeRating);
-        if (typeRatingQuestions.length === 0) {
-          showToast(`Tidak ada soal untuk Type Rating ${user.typeRating}`, 'error');
-          return;
-        }
+      const [assignModal, setAssignModal] = useState({ show: false, user: null, typeExam: 'Initial', modelSoal: 'MODEL A' });
 
-        const existing = assignments.find(a => a.userId === user.id && a.status === 'pending');
+      const handleAssignClick = (user) => {
+        const existing = assignments.find(a => (a.userId === user.id || a.userId === user.username) && a.status === 'pending');
         if (existing) {
           showToast(`User ini sudah memiliki ujian aktif yang belum dikerjakan`, 'error');
+          return;
+        }
+        setAssignModal({ show: true, user, typeExam: 'Initial', modelSoal: 'MODEL A' });
+      };
+
+      const submitAssign = async () => {
+        const { user, typeExam, modelSoal } = assignModal;
+        
+        // Cek ketersediaan soal berdasarkan kombinasi Type Rating + Type Exam + Model Soal
+        const examQuestions = questions.filter(q => 
+          q.typeRating === user.typeRating && 
+          q.typeExam === typeExam && 
+          q.modelSoal === modelSoal
+        );
+
+        if (examQuestions.length === 0) {
+          showToast(`Tidak ada soal untuk ${user.typeRating} - ${typeExam} - ${modelSoal}`, 'error');
           return;
         }
 
@@ -500,6 +528,8 @@
             userId: user.id || user.username, 
             userName: user.name,
             typeRating: user.typeRating,
+            typeExam: typeExam,
+            modelSoal: modelSoal,
             status: 'pending',
             score: '',
             assignedAt: new Date().toISOString(),
@@ -507,7 +537,8 @@
           };
           
           await fetchSheetData('addAssignment', payload);
-          showToast(`Ujian berhasil ditugaskan ke ${user.name}`, 'success');
+          showToast(`Ujian ${typeExam} (${modelSoal}) berhasil ditugaskan ke ${user.name}`, 'success');
+          setAssignModal({ show: false, user: null, typeExam: 'Initial', modelSoal: 'MODEL A' });
           refreshData();
         } catch (err) {
           showToast('Gagal menugaskan ujian', 'error');
@@ -515,7 +546,7 @@
       };
 
       return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 relative">
           <div className="p-6 border-b border-slate-200">
             <h2 className="text-xl font-bold text-slate-800">Manajemen User & Assignment</h2>
             <p className="text-slate-500 text-sm mt-1">Daftar kru terdaftar dari Google Sheets.</p>
@@ -550,7 +581,7 @@
                         </span>
                       </td>
                       <td className="p-4 text-right">
-                        <button onClick={() => handleAssign(u)} className="inline-flex items-center gap-1 bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded shadow hover:bg-slate-800 transition-colors">
+                        <button onClick={() => handleAssignClick(u)} className="inline-flex items-center gap-1 bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded shadow hover:bg-slate-800 transition-colors">
                           <Icon name="plus" size={14} /> Assign Exam
                         </button>
                       </td>
@@ -560,14 +591,51 @@
               </tbody>
             </table>
           </div>
+
+          {/* Modal Assign Exam */}
+          {assignModal.show && (
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
+                <h3 className="font-bold text-lg text-slate-800 mb-2">Penugasan Ujian</h3>
+                <p className="text-sm text-slate-600 mb-4">Tentukan jenis ujian untuk <b>{assignModal.user?.name}</b> ({assignModal.user?.typeRating})</p>
+                
+                <div className="space-y-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Type Exam</label>
+                    <input list="examTypesList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
+                      value={assignModal.typeExam} onChange={e => setAssignModal({...assignModal, typeExam: e.target.value})} placeholder="Pilih/Ketik manual..." />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Model Soal</label>
+                    <input list="modelSoalsList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
+                      value={assignModal.modelSoal} onChange={e => setAssignModal({...assignModal, modelSoal: e.target.value})} placeholder="Pilih/Ketik manual..." />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 justify-end">
+                  <button onClick={() => setAssignModal({ show: false, user: null, typeExam: 'Initial', modelSoal: 'MODEL A' })} className="px-4 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100">Batal</button>
+                  <button onClick={submitAssign} className="px-4 py-2 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-md flex items-center gap-2">
+                    <Icon name="paper-plane" size={14}/> Tugaskan
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
 
     function AdminQuestions({ questions, showToast, fetchSheetData, refreshData }) {
       const [showForm, setShowForm] = useState(false);
+      const [showImport, setShowImport] = useState(false);
       const [isSaving, setIsSaving] = useState(false);
-      const [formData, setFormData] = useState({ typeRating: TYPE_RATINGS[0], text: '', optA: '', optB: '', optC: '', optD: '', correctAnswer: 'A' });
+      const [isImporting, setIsImporting] = useState(false);
+      const [importText, setImportText] = useState('');
+      const [importTypeRating, setImportTypeRating] = useState(TYPE_RATINGS[0]);
+      const [importExamType, setImportExamType] = useState('Initial');
+      const [importModelSoal, setImportModelSoal] = useState('MODEL A');
+      const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
+      const [formData, setFormData] = useState({ typeRating: TYPE_RATINGS[0], typeExam: 'Initial', modelSoal: 'MODEL A', text: '', optA: '', optB: '', optC: '', optD: '', correctAnswer: 'A' });
 
       const handleSubmit = async (e) => {
         e.preventDefault();
@@ -593,28 +661,205 @@
         } catch (err) { showToast('Gagal menghapus soal', 'error'); }
       };
 
+      const handleImport = async () => {
+        const lines = importText.split('\n').map(l => l.trim()).filter(l => l !== '');
+        if (lines.length === 0) return;
+
+        setIsImporting(true);
+        
+        let successCount = 0;
+        let errorCount = 0;
+        let currentSection = 'General';
+        let currentQ = {};
+        let payloadBatch = [];
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          // Deteksi "1. Pertanyaan" (angka titik/kurung di awal akan dibuang)
+          const qMatch = line.match(/^\d+[\.\)]\s*(.*)/); 
+          // Deteksi "A. Opsi"
+          const optMatch = line.match(/^([A-D])[\.\)]\s*(.*)/i);
+          // Deteksi "Correct answer : C"
+          const ansMatch = line.match(/^Correct\s+answer\s*:\s*([A-D])/i);
+
+          if (ansMatch) {
+            currentQ.correctAnswer = ansMatch[1].toUpperCase();
+            if (currentQ.text && (currentQ.optA || currentQ.optB)) {
+              payloadBatch.push({
+                typeRating: importTypeRating,
+                typeExam: importExamType,
+                modelSoal: importModelSoal,
+                section: currentSection,
+                text: currentQ.text,
+                optA: currentQ.optA || '',
+                optB: currentQ.optB || '',
+                optC: currentQ.optC || '',
+                optD: currentQ.optD || '',
+                correctAnswer: currentQ.correctAnswer,
+                createdAt: new Date().toISOString()
+              });
+            } else {
+              errorCount++;
+            }
+            currentQ = {}; 
+          } else if (optMatch && currentQ.text) {
+            const optLetter = optMatch[1].toUpperCase();
+            currentQ[`opt${optLetter}`] = optMatch[2];
+          } else if (qMatch) {
+            currentQ.text = qMatch[1];
+          } else {
+            if (Object.keys(currentQ).length === 0) {
+              currentSection = line;
+            } else if (currentQ.text && !currentQ.optA) {
+              currentQ.text += '\n' + line;
+            }
+          }
+        }
+
+        if (payloadBatch.length === 0) {
+          setIsImporting(false);
+          showToast('Format soal tidak dikenali, gagal import.', 'error');
+          return;
+        }
+
+        setImportProgress({ current: 0, total: payloadBatch.length });
+        
+        for (let i = 0; i < payloadBatch.length; i++) {
+          try {
+            await fetchSheetData('addQuestion', payloadBatch[i]);
+            successCount++;
+          } catch(e) {
+            errorCount++;
+          }
+          setImportProgress({ current: i + 1, total: payloadBatch.length });
+        }
+
+        setIsImporting(false);
+        showToast(`Import selesai: ${successCount} berhasil, ${errorCount} gagal.`, successCount > 0 ? 'success' : 'error');
+        if (successCount > 0) {
+          setImportText('');
+          setShowImport(false);
+          refreshData();
+        }
+      };
+
       return (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex justify-between items-center">
+          {/* Data List untuk Combobox (Dropdown + Manual Input) */}
+          <datalist id="examTypesList">
+            <option value="Initial" />
+            <option value="Recurrent" />
+            <option value="Upgrade Training" />
+          </datalist>
+          <datalist id="modelSoalsList">
+            <option value="MODEL A" />
+            <option value="MODEL B" />
+            <option value="MODEL C" />
+            <option value="MODEL D" />
+          </datalist>
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 className="text-xl font-bold text-slate-800">Question Bank</h2>
               <p className="text-slate-500 text-sm mt-1">Kelola soal di Google Sheets.</p>
             </div>
-            <button onClick={() => setShowForm(!showForm)} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 transition-colors flex items-center gap-2">
-              {showForm ? 'Tutup Form' : <><Icon name="plus" size={16}/> Tambah Soal</>}
-            </button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button onClick={() => { setShowImport(!showImport); setShowForm(false); }} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 ${showImport ? 'bg-slate-200 text-slate-800' : 'bg-green-600 text-white hover:bg-green-700'}`}>
+                <Icon name="file-import" size={16}/> Import
+              </button>
+              <button onClick={() => { setShowForm(!showForm); setShowImport(false); }} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 ${showForm ? 'bg-slate-200 text-slate-800' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+                <Icon name="plus" size={16}/> Tambah Soal
+              </button>
+            </div>
           </div>
+
+          {showImport && (
+            <div className="bg-white rounded-xl shadow-md border-l-4 border-l-green-500 p-6 animate-fade-in-up">
+              <h3 className="font-bold text-lg mb-4 text-slate-800">Import Soal Otomatis</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Type Rating</label>
+                  <select className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white"
+                    value={importTypeRating} onChange={e => setImportTypeRating(e.target.value)}>
+                    {TYPE_RATINGS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Type Exam</label>
+                  <input list="examTypesList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white"
+                    value={importExamType} onChange={e => setImportExamType(e.target.value)} placeholder="Pilih/Ketik manual..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Model Soal</label>
+                  <input list="modelSoalsList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white"
+                    value={importModelSoal} onChange={e => setImportModelSoal(e.target.value)} placeholder="Pilih/Ketik manual..." />
+                </div>
+              </div>
+
+              <div className="bg-slate-100 p-3 rounded-lg mb-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap">
+                <b>Contoh Format:</b><br/>
+                AIRCRAFT GENERAL<br/>
+                1. The main rotor system of the Bell 412EP is:<br/>
+                A. Two-blade semi-rigid<br/>
+                B. Three-blade rigid<br/>
+                C. Four-blade composite soft-in-plane<br/>
+                D. Five-blade rigid<br/>
+                Correct answer : C
+              </div>
+              <textarea
+                rows="8" disabled={isImporting}
+                className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-slate-50 font-mono text-sm focus:ring-2 focus:ring-green-500 outline-none"
+                placeholder="AIRCRAFT GENERAL&#10;1. Pertanyaan pertama?&#10;A. Pilihan 1&#10;B. Pilihan 2&#10;Correct answer : A"
+                value={importText}
+                onChange={(e) => setImportText(e.target.value)}
+              ></textarea>
+              
+              {importProgress.total > 0 && (
+                <div className="mt-4">
+                  <div className="flex justify-between text-xs font-bold mb-1 text-slate-700">
+                    <span>Progres Import</span>
+                    <span>{importProgress.current} / {importProgress.total}</span>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-2.5">
+                    <div className="bg-green-600 h-2.5 rounded-full transition-all duration-300" style={{width: `${(importProgress.current / importProgress.total) * 100}%`}}></div>
+                  </div>
+                </div>
+              )}
+
+              <div className="pt-4 flex justify-end gap-3">
+                <button disabled={isImporting} onClick={() => setShowImport(false)} type="button" className="bg-white text-slate-700 font-bold py-2 px-4 rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors">
+                  Batal
+                </button>
+                <button disabled={isImporting || !importText.trim()} onClick={handleImport} className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 disabled:opacity-50 flex gap-2 items-center shadow-md">
+                  {isImporting ? 'Memproses...' : <><Icon name="database" size={16}/> Mulai Import</>}
+                </button>
+              </div>
+            </div>
+          )}
 
           {showForm && (
             <div className="bg-white rounded-xl shadow-md border-l-4 border-l-blue-500 p-6 animate-fade-in-up">
               <h3 className="font-bold text-lg mb-4 text-slate-800">Buat Soal Baru</h3>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Type Rating</label>
-                  <select className="w-full md:w-1/3 px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
-                    value={formData.typeRating} onChange={e => setFormData({...formData, typeRating: e.target.value})}>
-                    {TYPE_RATINGS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Type Rating</label>
+                    <select className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
+                      value={formData.typeRating} onChange={e => setFormData({...formData, typeRating: e.target.value})}>
+                      {TYPE_RATINGS.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Type Exam</label>
+                    <input list="examTypesList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
+                      value={formData.typeExam} onChange={e => setFormData({...formData, typeExam: e.target.value})} placeholder="Pilih/Ketik manual..." />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Model Soal</label>
+                    <input list="modelSoalsList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
+                      value={formData.modelSoal} onChange={e => setFormData({...formData, modelSoal: e.target.value})} placeholder="Pilih/Ketik manual..." />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Pertanyaan</label>
@@ -666,6 +911,23 @@
                       <div key={q.id || idx} className="p-4 flex gap-4 hover:bg-slate-50">
                         <div className="font-bold text-slate-400">{idx + 1}.</div>
                         <div className="flex-1">
+                          <div className="flex flex-wrap gap-2 mb-2 items-center">
+                            {q.section && q.section !== 'General' && (
+                              <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded uppercase tracking-wider inline-block">
+                                {q.section}
+                              </span>
+                            )}
+                            {q.typeExam && (
+                              <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded uppercase tracking-wider inline-block">
+                                {q.typeExam}
+                              </span>
+                            )}
+                            {q.modelSoal && (
+                              <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded uppercase tracking-wider inline-block">
+                                {q.modelSoal}
+                              </span>
+                            )}
+                          </div>
                           <p className="font-semibold text-slate-800 mb-2">{q.text}</p>
                           <div className="grid grid-cols-2 gap-2 text-sm text-slate-600">
                             <div className={q.correctAnswer === 'A' ? 'font-bold text-green-600' : ''}>A. {q.optA}</div>
@@ -713,7 +975,10 @@
                   completed.map((a, i) => (
                     <tr key={a.id || i} className="hover:bg-slate-50">
                       <td className="p-4 font-semibold text-slate-800">{a.userName}</td>
-                      <td className="p-4"><span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800">{a.typeRating}</span></td>
+                      <td className="p-4">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 mb-1">{a.typeRating}</span><br/>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase">{a.typeExam || 'Ujian'} - {a.modelSoal || 'Umum'}</span>
+                      </td>
                       <td className="p-4 text-sm text-slate-600">{a.completedAt ? new Date(a.completedAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' }) : '-'}</td>
                       <td className="p-4 text-right">
                         <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${Number(a.score) >= 80 ? 'bg-green-100 text-green-700' : Number(a.score) >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
@@ -772,7 +1037,7 @@
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h4 className="font-bold text-lg text-slate-800">Type Rating Exam</h4>
-                        <p className="text-blue-600 font-bold text-sm">{a.typeRating}</p>
+                        <p className="text-blue-600 font-bold text-sm">{a.typeRating} - {a.typeExam} ({a.modelSoal})</p>
                       </div>
                       <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">Baru</span>
                     </div>
@@ -805,7 +1070,10 @@
                   ) : (
                     completed.map((a, i) => (
                       <tr key={a.id || i}>
-                        <td className="p-4 font-semibold text-slate-800">Exam {a.typeRating}</td>
+                        <td className="p-4 font-semibold text-slate-800">
+                          {a.typeRating} - {a.typeExam}
+                          <div className="text-[10px] text-slate-500 mt-0.5">{a.modelSoal}</div>
+                        </td>
                         <td className="p-4 text-sm text-slate-600">{a.completedAt ? new Date(a.completedAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}</td>
                         <td className="p-4 text-right">
                           <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${Number(a.score) >= 80 ? 'bg-green-100 text-green-700' : Number(a.score) >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
@@ -825,7 +1093,13 @@
 
     function ExamRunner({ appUser, assignments, questions, setView, showToast, fetchSheetData, refreshData }) {
       const assignment = assignments.find(a => (a.userId === appUser.id || a.userId === appUser.username) && a.status === 'pending');
-      const examQuestions = questions.filter(q => q.typeRating === (assignment?.typeRating || ''));
+      
+      // Filter soal berdasar Type Rating AND Type Exam AND Model Soal
+      const examQuestions = questions.filter(q => 
+        q.typeRating === (assignment?.typeRating || '') && 
+        (!assignment?.typeExam || q.typeExam === assignment.typeExam) && 
+        (!assignment?.modelSoal || q.modelSoal === assignment.modelSoal)
+      );
       
       const [answers, setAnswers] = useState({});
       const [isSubmitting, setIsSubmitting] = useState(false);
@@ -881,7 +1155,7 @@
           <div className="bg-slate-900 text-white p-6 rounded-t-xl sticky top-0 z-20 shadow-md flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
               <h2 className="text-xl font-bold uppercase tracking-wide">
-                Type Rating Exam: <span className="text-yellow-500">{assignment.typeRating}</span>
+                Exam: <span className="text-yellow-500">{assignment.typeRating} - {assignment.typeExam}</span> <span className="text-sm opacity-80">({assignment.modelSoal})</span>
               </h2>
               <p className="text-sm text-slate-300 mt-1">Kandidat: {appUser.name} | Lisensi: {appUser.licenceNo}</p>
             </div>
@@ -892,34 +1166,47 @@
           </div>
 
           <div className="bg-slate-50 p-6 sm:p-8 border-x border-b border-slate-200 rounded-b-xl shadow-sm mb-10 space-y-8">
-            {examQuestions.map((q, idx) => {
-              const qId = q.id || q.text;
-              return (
-                <div key={qId} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
-                   {answers[qId] && (
-                     <div className="absolute top-0 right-0 bg-green-500 text-white p-2 rounded-bl-lg flex items-center justify-center">
-                       <Icon name="circle-check" size={16} />
-                     </div>
-                   )}
-                  <h3 className="text-lg font-semibold text-slate-800 mb-4 flex gap-3">
-                    <span className="text-slate-400 font-bold">{idx + 1}.</span> 
-                    <span>{q.text}</span>
-                  </h3>
-                  <div className="space-y-3 pl-8">
-                    {['A', 'B', 'C', 'D'].map((opt) => (
-                      <label key={opt} className={`flex items-center gap-4 p-3 rounded-lg border-2 cursor-pointer transition-colors ${answers[qId] === opt ? 'border-blue-500 bg-blue-50/50' : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'}`}>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${answers[qId] === opt ? 'border-blue-500' : 'border-slate-300'}`}>
-                          {answers[qId] === opt && <div className="w-3 h-3 bg-blue-500 rounded-full"></div>}
-                        </div>
-                        <span className="font-bold text-slate-600 w-6">{opt}.</span>
-                        <span className="text-slate-800">{q[`opt${opt}`]}</span>
-                        <input type="radio" name={`q-${qId}`} value={opt} className="hidden" onChange={() => setAnswers({...answers, [qId]: opt})} />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
+            {(() => {
+              let currentSectionDisplay = null;
+              return examQuestions.map((q, idx) => {
+                const qId = q.id || q.text;
+                const showSection = q.section && q.section !== currentSectionDisplay;
+                if (showSection) currentSectionDisplay = q.section;
+
+                return (
+                  <React.Fragment key={qId}>
+                    {showSection && q.section !== 'General' && (
+                      <div className="col-span-full pt-4 pb-2 border-b-2 border-slate-300 mt-2">
+                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide">{q.section}</h3>
+                      </div>
+                    )}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
+                       {answers[qId] && (
+                         <div className="absolute top-0 right-0 bg-green-500 text-white p-2 rounded-bl-lg flex items-center justify-center">
+                           <Icon name="circle-check" size={16} />
+                         </div>
+                       )}
+                      <h3 className="text-lg font-semibold text-slate-800 mb-4 flex gap-3">
+                        <span className="text-slate-400 font-bold">{idx + 1}.</span> 
+                        <span>{q.text}</span>
+                      </h3>
+                      <div className="space-y-3 pl-8">
+                        {['A', 'B', 'C', 'D'].map((opt) => (
+                          <label key={opt} className={`flex items-center gap-4 p-3 rounded-lg border-2 cursor-pointer transition-colors ${answers[qId] === opt ? 'border-blue-500 bg-blue-50/50' : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'}`}>
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${answers[qId] === opt ? 'border-blue-500' : 'border-slate-300'}`}>
+                              {answers[qId] === opt && <div className="w-3 h-3 bg-blue-500 rounded-full"></div>}
+                            </div>
+                            <span className="font-bold text-slate-600 w-6">{opt}.</span>
+                            <span className="text-slate-800">{q[`opt${opt}`]}</span>
+                            <input type="radio" name={`q-${qId}`} value={opt} className="hidden" onChange={() => setAnswers({...answers, [qId]: opt})} />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </React.Fragment>
+                );
+              });
+            })()}
 
             <div className="pt-6 border-t border-slate-200 flex justify-end">
               <button onClick={handleSubmit} disabled={isSubmitting} className="bg-green-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl disabled:opacity-50 text-lg flex items-center gap-2">
