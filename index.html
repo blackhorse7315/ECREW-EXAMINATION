@@ -118,6 +118,21 @@
                 }
                 data = { success: true };
               }
+              if (action === 'deleteUser') {
+                const current = JSON.parse(localStorage.getItem('sheet_users') || '[]');
+                const filtered = current.filter(u => u.id !== payload.id);
+                localStorage.setItem('sheet_users', JSON.stringify(filtered));
+                data = { success: true };
+              }
+              if (action === 'updateUser') {
+                const current = JSON.parse(localStorage.getItem('sheet_users') || '[]');
+                const index = current.findIndex(u => u.id === payload.id);
+                if (index > -1) {
+                  current[index] = { ...current[index], ...payload };
+                  localStorage.setItem('sheet_users', JSON.stringify(current));
+                }
+                data = { success: true };
+              }
               if (action === 'addAssignment') {
                 const current = JSON.parse(localStorage.getItem('sheet_assignments') || '[]');
                 payload.id = Date.now().toString();
@@ -555,6 +570,7 @@
 
     function AdminUsers({ users, questions, assignments, showToast, fetchSheetData, refreshData }) {
       const [assignModal, setAssignModal] = useState({ show: false, user: null, typeExam: 'Initial', modelSoal: 'MODEL A' });
+      const [editUserModal, setEditUserModal] = useState({ show: false, data: null });
 
       const handleAssignClick = (user) => {
         const existing = assignments.find(a => (a.userId === user.id || a.userId === user.username) && a.status === 'pending');
@@ -602,6 +618,31 @@
         }
       };
 
+      const handleDeleteUser = async (id) => {
+        if (!window.confirm("Yakin ingin menghapus user ini?")) return;
+        try {
+          await fetchSheetData('deleteUser', { id });
+          showToast('User berhasil dihapus', 'success');
+          refreshData();
+        } catch (err) { showToast('Gagal menghapus user', 'error'); }
+      };
+
+      const handleEditUserClick = (user) => {
+        setEditUserModal({ show: true, data: { ...user } });
+      };
+
+      const submitUpdateUser = async (e) => {
+        e.preventDefault();
+        try {
+          await fetchSheetData('updateUser', editUserModal.data);
+          showToast('Data user berhasil diperbarui', 'success');
+          setEditUserModal({ show: false, data: null });
+          refreshData();
+        } catch (err) {
+          showToast('Gagal memperbarui data user', 'error');
+        }
+      };
+
       return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 relative">
           <div className="p-6 border-b border-slate-200">
@@ -638,9 +679,17 @@
                         </span>
                       </td>
                       <td className="p-4 text-right">
-                        <button onClick={() => handleAssignClick(u)} className="inline-flex items-center gap-1 bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded shadow hover:bg-slate-800 transition-colors">
-                          <Icon name="plus" size={14} /> Assign Exam
-                        </button>
+                        <div className="flex justify-end gap-2 items-center">
+                          <button onClick={() => handleEditUserClick(u)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit User">
+                            <Icon name="pen-to-square" size={14} />
+                          </button>
+                          <button onClick={() => handleDeleteUser(u.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus User">
+                            <Icon name="trash-can" size={14} />
+                          </button>
+                          <button onClick={() => handleAssignClick(u)} className="inline-flex items-center gap-1 bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded shadow hover:bg-slate-800 transition-colors">
+                            <Icon name="plus" size={14} /> Assign Exam
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -675,6 +724,66 @@
                     <Icon name="paper-plane" size={14}/> Tugaskan
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Edit User */}
+          {editUserModal.show && (
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-fade-in-up">
+                <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                  <h3 className="font-bold text-lg text-slate-800">Edit Data User</h3>
+                  <button type="button" onClick={() => setEditUserModal({ show: false, data: null })} className="text-slate-400 hover:text-red-500 transition-colors">
+                    <Icon name="xmark" size={20} />
+                  </button>
+                </div>
+                
+                <form onSubmit={submitUpdateUser} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Lengkap</label>
+                      <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                        value={editUserModal.data?.name || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, name: e.target.value } })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Username</label>
+                      <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                        value={editUserModal.data?.username || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, username: e.target.value } })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+                      <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                        value={editUserModal.data?.password || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, password: e.target.value } })} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Rank</label>
+                      <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                        value={editUserModal.data?.rank || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, rank: e.target.value } })}>
+                        {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">Type Rating</label>
+                      <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                        value={editUserModal.data?.typeRating || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, typeRating: e.target.value } })}>
+                        {TYPE_RATINGS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                    <div className="col-span-1 md:col-span-2">
+                      <label className="block text-sm font-semibold text-slate-700 mb-1">No. Licence</label>
+                      <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                        value={editUserModal.data?.licenceNo || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, licenceNo: e.target.value } })} />
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
+                    <button type="button" onClick={() => setEditUserModal({ show: false, data: null })} className="px-4 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100 transition-colors">Batal</button>
+                    <button type="submit" className="px-5 py-2 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-md flex items-center gap-2 transition-colors">
+                      <Icon name="check" size={14}/> Simpan Perubahan
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
