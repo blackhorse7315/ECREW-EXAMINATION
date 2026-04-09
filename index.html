@@ -48,7 +48,7 @@
     // ==========================================
     // KONFIGURASI GOOGLE SHEETS
     // ==========================================
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzsqx9f-oFwgGp1kBirRxdmBTWYk7eJYfT3jLWVkGVqgw1hY577dHUawhW3x3_KDj3yDQ/exec"; 
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybHorRMXWnA_zqXctfS4p5OYK_huzmo0Il74BE4ugKcpHSDm-OFuCWGLK19n41qNGd1g/exec"; 
 
     // --- CONSTANTS ---
     const TYPE_RATINGS = ['GIV', 'BE300', 'CA212', 'B412', 'AW109'];
@@ -64,6 +64,7 @@
       const [users, setUsers] = useState([]);
       const [questions, setQuestions] = useState([]);
       const [assignments, setAssignments] = useState([]);
+      const [instructors, setInstructors] = useState([]);
 
       // Toast State
       const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
@@ -77,6 +78,7 @@
               if (action === 'getUsers') data = JSON.parse(localStorage.getItem('sheet_users') || '[]');
               if (action === 'getQuestions') data = JSON.parse(localStorage.getItem('sheet_questions') || '[]');
               if (action === 'getAssignments') data = JSON.parse(localStorage.getItem('sheet_assignments') || '[]');
+              if (action === 'getInstructors') data = JSON.parse(localStorage.getItem('sheet_instructors') || '[]');
               
               if (action === 'registerUser') {
                 const current = JSON.parse(localStorage.getItem('sheet_users') || '[]');
@@ -133,6 +135,28 @@
                 }
                 data = { success: true };
               }
+              if (action === 'addInstructor') {
+                const current = JSON.parse(localStorage.getItem('sheet_instructors') || '[]');
+                payload.id = Date.now().toString();
+                current.push(payload);
+                localStorage.setItem('sheet_instructors', JSON.stringify(current));
+                data = { success: true };
+              }
+              if (action === 'updateInstructor') {
+                const current = JSON.parse(localStorage.getItem('sheet_instructors') || '[]');
+                const index = current.findIndex(i => i.id === payload.id);
+                if (index > -1) {
+                  current[index] = { ...current[index], ...payload };
+                  localStorage.setItem('sheet_instructors', JSON.stringify(current));
+                }
+                data = { success: true };
+              }
+              if (action === 'deleteInstructor') {
+                const current = JSON.parse(localStorage.getItem('sheet_instructors') || '[]');
+                const filtered = current.filter(i => i.id !== payload.id);
+                localStorage.setItem('sheet_instructors', JSON.stringify(filtered));
+                data = { success: true };
+              }
               if (action === 'addAssignment') {
                 const current = JSON.parse(localStorage.getItem('sheet_assignments') || '[]');
                 payload.id = Date.now().toString();
@@ -180,21 +204,24 @@
         const cachedUsers = JSON.parse(localStorage.getItem('cache_users'));
         const cachedQuestions = JSON.parse(localStorage.getItem('cache_questions'));
         const cachedAssignments = JSON.parse(localStorage.getItem('cache_assignments'));
+        const cachedInstructors = JSON.parse(localStorage.getItem('cache_instructors'));
 
-        if (cachedUsers && cachedQuestions && cachedAssignments) {
+        if (cachedUsers && cachedQuestions && cachedAssignments && cachedInstructors) {
           setUsers(cachedUsers);
           setQuestions(cachedQuestions);
           setAssignments(cachedAssignments);
+          setInstructors(cachedInstructors);
           setIsLoading(false); // Langsung hilangkan layar loading
         } else {
           setIsLoading(true);
         }
 
         try {
-          const [fetchedUsers, fetchedQuestions, fetchedAssignments] = await Promise.all([
+          const [fetchedUsers, fetchedQuestions, fetchedAssignments, fetchedInstructors] = await Promise.all([
             fetchSheetData('getUsers'),
             fetchSheetData('getQuestions'),
-            fetchSheetData('getAssignments')
+            fetchSheetData('getAssignments'),
+            fetchSheetData('getInstructors')
           ]);
           
           // Standarisasi key (Mengatasi perbedaan nama header di Spreadsheet seperti "Correct Answer" vs "correctAnswer")
@@ -215,11 +242,13 @@
           setUsers(fetchedUsers || []);
           setQuestions(stdQuestions);
           setAssignments(fetchedAssignments || []);
+          setInstructors(fetchedInstructors || []);
 
           // Simpan pembaruan ke cache untuk kunjungan berikutnya
           localStorage.setItem('cache_users', JSON.stringify(fetchedUsers || []));
           localStorage.setItem('cache_questions', JSON.stringify(stdQuestions));
           localStorage.setItem('cache_assignments', JSON.stringify(fetchedAssignments || []));
+          localStorage.setItem('cache_instructors', JSON.stringify(fetchedInstructors || []));
         } catch (err) {
           if (!cachedUsers) {
             showToast("Gagal memuat data dari Spreadsheet", "error");
@@ -312,7 +341,7 @@
           <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
             {view === 'login' && <LoginView setView={setView} setAppUser={setAppUser} users={users} showToast={showToast} fetchSheetData={fetchSheetData} />}
             {view === 'register' && <RegisterView setView={setView} users={users} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
-            {view === 'admin' && ['admin', 'instructor'].includes(appUser?.role) && <AdminDashboard appUser={appUser} users={users} questions={questions} assignments={assignments} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
+            {view === 'admin' && ['admin', 'instructor'].includes(appUser?.role) && <AdminDashboard appUser={appUser} users={users} questions={questions} assignments={assignments} instructors={instructors} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
             {view === 'user' && appUser?.role === 'user' && <UserDashboard appUser={appUser} assignments={assignments} setView={setView} />}
             {view === 'exam' && appUser?.role === 'user' && <ExamRunner appUser={appUser} assignments={assignments} questions={questions} setView={setView} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
           </main>
@@ -339,193 +368,7 @@
       );
     }
 
-    // ==========================================
-    // VIEWS
-    // ==========================================
-
-    function LoginView({ setView, setAppUser, users, showToast, fetchSheetData }) {
-      const [username, setUsername] = useState('');
-      const [password, setPassword] = useState('');
-      const [isLoggingIn, setIsLoggingIn] = useState(false);
-
-      const handleLogin = async (e) => {
-        e.preventDefault();
-        setIsLoggingIn(true);
-        
-        if (username === 'admin' && password === 'admin123') {
-          setAppUser({ role: 'admin', name: 'System Administrator', username: 'admin' });
-          setView('admin');
-          showToast('Welcome, Administrator', 'success');
-          setIsLoggingIn(false);
-          return;
-        }
-
-        if (username === 'instructor' && password === 'instructor123') {
-          setAppUser({ role: 'instructor', name: 'Chief Instructor', username: 'instructor' });
-          setView('admin');
-          showToast('Welcome, Instructor', 'success');
-          setIsLoggingIn(false);
-          return;
-        }
-
-        const user = users.find(u => u.username === username && u.password === password);
-        if (user) {
-          fetchSheetData('logLogin', { username, password });
-          
-          // Cek apakah user memiliki pangkat instruktur
-          const isInstructor = ['CCP', 'FI', 'GI'].includes(user.rank);
-          
-          setAppUser({ ...user, role: isInstructor ? 'instructor' : 'user' });
-          setView(isInstructor ? 'admin' : 'user');
-          showToast(`Welcome back, ${user.name}`, 'success');
-        } else {
-          showToast('Username atau password salah', 'error');
-        }
-        setIsLoggingIn(false);
-      };
-
-      return (
-        <div className="max-w-md mx-auto mt-10 animate-fade-in-up">
-          <div className="bg-white p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-slate-800">Portal Login</h2>
-              <p className="text-slate-500 mt-2 text-sm">Silakan masukkan kredensial Anda</p>
-            </div>
-
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Username</label>
-                <input 
-                  type="text" required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-all bg-slate-50"
-                  value={username} onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Masukkan username"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
-                <input 
-                  type="password" required
-                  className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-all bg-slate-50"
-                  value={password} onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </div>
-              
-              <button 
-                type="submit" disabled={isLoggingIn}
-                className="w-full bg-slate-900 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-800 transition-colors shadow-md hover:shadow-lg flex justify-center items-center gap-2 disabled:opacity-70"
-              >
-                {isLoggingIn ? 'Memeriksa...' : <>Masuk <Icon name="arrow-right" size={18} /></>}
-              </button>
-            </form>
-
-            <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-              <p className="text-sm text-slate-600">
-                Kru baru?{' '}
-                <button onClick={() => setView('register')} className="text-blue-600 font-bold hover:underline">
-                  Daftar di sini
-                </button>
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    function RegisterView({ setView, users, showToast, fetchSheetData, refreshData }) {
-      const [formData, setFormData] = useState({ name: '', username: '', password: '', rank: RANKS[0], typeRating: TYPE_RATINGS[0], licenceNo: '' });
-      const [isSubmitting, setIsSubmitting] = useState(false);
-
-      const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (users.some(u => u.username === formData.username)) {
-          showToast('Username sudah digunakan', 'error');
-          return;
-        }
-
-        setIsSubmitting(true);
-        try {
-          const payload = { ...formData, createdAt: new Date().toISOString() };
-          await fetchSheetData('registerUser', payload);
-          showToast('Registrasi berhasil! Silakan login.', 'success');
-          refreshData(); 
-          setView('login');
-        } catch (error) {
-          showToast('Terjadi kesalahan saat registrasi ke Spreadsheet', 'error');
-        } finally {
-          setIsSubmitting(false);
-        }
-      };
-
-      return (
-        <div className="max-w-xl mx-auto mt-6 animate-fade-in-up">
-          <div className="bg-white p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
-            
-            <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100">
-              <div className="bg-blue-50 p-3 rounded-lg flex items-center justify-center">
-                <Icon name="user-plus" size={24} className="text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-slate-800">Registrasi Kru</h2>
-                <p className="text-slate-500 text-sm">Data akan tersimpan di Google Sheets</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="col-span-1 md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Lengkap</label>
-                  <input type="text" required className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                    value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Cth: Budi Santoso" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Username</label>
-                  <input type="text" required className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                    value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} placeholder="Untuk login" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
-                  <input type="password" required className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                    value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Rank</label>
-                  <select className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                    value={formData.rank} onChange={(e) => setFormData({...formData, rank: e.target.value})}>
-                    {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Type Rating</label>
-                  <select className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                    value={formData.typeRating} onChange={(e) => setFormData({...formData, typeRating: e.target.value})}>
-                    {TYPE_RATINGS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div className="col-span-1 md:col-span-2">
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">No. Licence</label>
-                  <input type="text" required className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                    value={formData.licenceNo} onChange={(e) => setFormData({...formData, licenceNo: e.target.value})} placeholder="Cth: ATPL/ 20-0007" />
-                </div>
-              </div>
-              
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setView('login')} className="flex-1 bg-white text-slate-700 font-bold py-3 px-4 rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors">
-                  Batal
-                </button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-md disabled:opacity-50 flex justify-center items-center gap-2">
-                  {isSubmitting ? 'Menyimpan...' : <>Daftar <Icon name="database" size={16}/></>}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      );
-    }
-
-    function AdminDashboard({ appUser, users, questions, assignments, showToast, fetchSheetData, refreshData }) {
+    function AdminDashboard({ appUser, users, questions, assignments, instructors, showToast, fetchSheetData, refreshData }) {
       const isAdmin = appUser?.role === 'admin';
       const [activeTab, setActiveTab] = useState(isAdmin ? 'users' : 'questions'); 
 
@@ -545,6 +388,11 @@
                     <Icon name="users" size={18} /> Daftar User & Assign
                   </button>
                 )}
+                {isAdmin && (
+                  <button onClick={() => setActiveTab('instructors')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'instructors' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
+                    <Icon name="chalkboard-user" size={18} /> Data Instruktur
+                  </button>
+                )}
                 <button onClick={() => setActiveTab('questions')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'questions' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
                   <Icon name="clipboard-list" size={18} /> Question Bank
                 </button>
@@ -561,9 +409,165 @@
 
           <div className="flex-1">
             {activeTab === 'users' && isAdmin && <AdminUsers users={users} questions={questions} assignments={assignments} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
+            {activeTab === 'instructors' && isAdmin && <AdminInstructors instructors={instructors} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
             {activeTab === 'questions' && <AdminQuestions questions={questions} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
             {activeTab === 'results' && <AdminResults assignments={assignments} users={users} />}
           </div>
+        </div>
+      );
+    }
+
+    function AdminInstructors({ instructors, showToast, fetchSheetData, refreshData }) {
+      const [showForm, setShowForm] = useState(false);
+      const [isSaving, setIsSaving] = useState(false);
+      const [formData, setFormData] = useState({ name: '', loa: '' });
+      const [editModal, setEditModal] = useState({ show: false, data: null });
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSaving(true);
+        try {
+          await fetchSheetData('addInstructor', { ...formData, createdAt: new Date().toISOString() });
+          showToast('Data Instruktur berhasil ditambahkan', 'success');
+          setFormData({ name: '', loa: '' });
+          setShowForm(false);
+          refreshData();
+        } catch (err) {
+          showToast('Gagal menambah data instruktur', 'error');
+        } finally {
+          setIsSaving(false);
+        }
+      };
+
+      const handleDelete = async (id) => {
+        if (!window.confirm("Yakin ingin menghapus instruktur ini?")) return;
+        try {
+          await fetchSheetData('deleteInstructor', { id });
+          showToast('Data Instruktur dihapus', 'success');
+          refreshData();
+        } catch (err) { showToast('Gagal menghapus data', 'error'); }
+      };
+
+      const handleEditClick = (inst) => {
+        setEditModal({ show: true, data: { ...inst } });
+      };
+
+      const submitUpdate = async (e) => {
+        e.preventDefault();
+        try {
+          await fetchSheetData('updateInstructor', editModal.data);
+          showToast('Data Instruktur berhasil diperbarui', 'success');
+          setEditModal({ show: false, data: null });
+          refreshData();
+        } catch (err) {
+          showToast('Gagal memperbarui data', 'error');
+        }
+      };
+
+      return (
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">Manajemen Instruktur</h2>
+              <p className="text-slate-500 text-sm mt-1">Kelola data Instruktur dan LOA (Letter of Approval).</p>
+            </div>
+            <button onClick={() => setShowForm(!showForm)} className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 ${showForm ? 'bg-slate-200 text-slate-800' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+              <Icon name={showForm ? "xmark" : "plus"} size={16}/> {showForm ? 'Tutup Form' : 'Tambah Instruktur'}
+            </button>
+          </div>
+
+          {showForm && (
+            <div className="bg-white rounded-xl shadow-md border-l-4 border-l-blue-500 p-6 animate-fade-in-up">
+              <h3 className="font-bold text-lg mb-4 text-slate-800">Tambah Data Instruktur</h3>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Nama Instruktur</label>
+                    <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
+                      value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Nama lengkap..." />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">LOA (Letter of Approval)</label>
+                    <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
+                      value={formData.loa} onChange={e => setFormData({...formData, loa: e.target.value})} placeholder="Nomor LOA..." />
+                  </div>
+                </div>
+                <div className="pt-4 flex justify-end">
+                  <button disabled={isSaving} type="submit" className="bg-slate-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-slate-800 disabled:opacity-50 flex gap-2 items-center">
+                    {isSaving ? 'Menyimpan...' : <><Icon name="database" size={16}/> Simpan Data</>}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+                  <th className="p-4 font-semibold">Nama Instruktur</th>
+                  <th className="p-4 font-semibold">LOA</th>
+                  <th className="p-4 font-semibold text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {instructors.length === 0 ? (
+                  <tr><td colSpan="3" className="p-8 text-center text-slate-500">Belum ada data instruktur.</td></tr>
+                ) : (
+                  instructors.map((i) => (
+                    <tr key={i.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-4 font-semibold text-slate-800">{i.name}</td>
+                      <td className="p-4 text-slate-600"><span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-sm font-bold border border-blue-100">{i.loa}</span></td>
+                      <td className="p-4 text-right">
+                        <div className="flex justify-end gap-2 items-center">
+                          <button onClick={() => handleEditClick(i)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                            <Icon name="pen-to-square" size={14} />
+                          </button>
+                          <button onClick={() => handleDelete(i.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
+                            <Icon name="trash-can" size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Modal Edit Instruktur */}
+          {editModal.show && (
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
+                <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+                  <h3 className="font-bold text-lg text-slate-800">Edit Data Instruktur</h3>
+                  <button type="button" onClick={() => setEditModal({ show: false, data: null })} className="text-slate-400 hover:text-red-500 transition-colors">
+                    <Icon name="xmark" size={20} />
+                  </button>
+                </div>
+                
+                <form onSubmit={submitUpdate} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Instruktur</label>
+                    <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                      value={editModal.data?.name || ''} onChange={(e) => setEditModal({ ...editModal, data: { ...editModal.data, name: e.target.value } })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">LOA</label>
+                    <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                      value={editModal.data?.loa || ''} onChange={(e) => setEditModal({ ...editModal, data: { ...editModal.data, loa: e.target.value } })} />
+                  </div>
+                  
+                  <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
+                    <button type="button" onClick={() => setEditModal({ show: false, data: null })} className="px-4 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100 transition-colors">Batal</button>
+                    <button type="submit" className="px-5 py-2 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-md flex items-center gap-2 transition-colors">
+                      <Icon name="check" size={14}/> Simpan Perubahan
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
