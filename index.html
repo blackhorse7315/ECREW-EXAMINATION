@@ -1,0 +1,1138 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  PlaneTakeoff, BookOpen, Users, ClipboardList, CheckCircle, 
+  LogOut, Plus, AlertCircle, Trash2, ArrowRight, UserPlus, 
+  Award, FileText, CheckSquare, Database
+} from 'lucide-react';
+
+// ==========================================
+// KONFIGURASI GOOGLE SHEETS
+// ==========================================
+// Masukkan URL Web App Google Apps Script Anda di dalam tanda kutip di bawah ini.
+// Contoh: "https://script.google.com/macros/s/AKfycby.../exec"
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHZj_fS08XwsudOqrXK7ipeTvkCo9tib5lBxW-vOt2hsHz5iodC6hiAM6eN7afaxFGoA/exec"; 
+
+// --- CONSTANTS ---
+const TYPE_RATINGS = ['GIV', 'BE300', 'CA212', 'B412', 'AW109'];
+const RANKS = ['CCP', 'FI', 'GI', 'Capt', 'FO'];
+
+export default function App() {
+  // State Aplikasi
+  const [isLoading, setIsLoading] = useState(true);
+  const [appUser, setAppUser] = useState(null);
+  const [view, setView] = useState('login');
+
+  // Data State
+  const [users, setUsers] = useState([]);
+  const [questions, setQuestions] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+
+  // Toast State
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  // --- GOOGLE SHEETS API SERVICE ---
+  const fetchSheetData = async (action, payload = null) => {
+    // 1. JIKA URL KOSONG: Gunakan Mock (Local Storage) untuk demo
+    if (!GOOGLE_SCRIPT_URL) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          let data;
+          if (action === 'getUsers') data = JSON.parse(localStorage.getItem('sheet_users') || '[]');
+          if (action === 'getQuestions') data = JSON.parse(localStorage.getItem('sheet_questions') || '[]');
+          if (action === 'getAssignments') data = JSON.parse(localStorage.getItem('sheet_assignments') || '[]');
+          
+          if (action === 'registerUser') {
+            const current = JSON.parse(localStorage.getItem('sheet_users') || '[]');
+            payload.id = Date.now().toString();
+            current.push(payload);
+            localStorage.setItem('sheet_users', JSON.stringify(current));
+            data = { success: true };
+          }
+          if (action === 'logLogin') {
+             // Mock pencatatan login
+             data = { success: true };
+          }
+          if (action === 'addQuestion') {
+            const current = JSON.parse(localStorage.getItem('sheet_questions') || '[]');
+            payload.id = Date.now().toString();
+            current.push(payload);
+            localStorage.setItem('sheet_questions', JSON.stringify(current));
+            data = { success: true };
+          }
+          if (action === 'deleteQuestion') {
+            const current = JSON.parse(localStorage.getItem('sheet_questions') || '[]');
+            const filtered = current.filter(q => q.id !== payload.id);
+            localStorage.setItem('sheet_questions', JSON.stringify(filtered));
+            data = { success: true };
+          }
+          if (action === 'addAssignment') {
+            const current = JSON.parse(localStorage.getItem('sheet_assignments') || '[]');
+            payload.id = Date.now().toString();
+            current.push(payload);
+            localStorage.setItem('sheet_assignments', JSON.stringify(current));
+            data = { success: true };
+          }
+          if (action === 'submitExam') {
+            const current = JSON.parse(localStorage.getItem('sheet_assignments') || '[]');
+            const index = current.findIndex(a => a.id === payload.id);
+            if(index > -1) {
+              current[index] = { ...current[index], ...payload };
+              localStorage.setItem('sheet_assignments', JSON.stringify(current));
+            }
+            data = { success: true };
+          }
+          resolve(data);
+        }, 500); // Simulasi delay network
+      });
+    }
+
+    // 2. JIKA URL TERISI: Tembak ke Google Sheets
+    try {
+      let url = `${GOOGLE_SCRIPT_URL}?action=${action}`;
+      let options = { method: 'GET' };
+
+      if (payload) {
+        options = {
+          method: 'POST',
+          // Menggunakan text/plain agar tidak terkena error CORS Preflight di GAS
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        };
+      }
+
+      const response = await fetch(url, options);
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error("Error fetching Google Sheets:", error);
+      throw error;
+    }
+  };
+
+  // Muat Data Awal
+  const loadInitialData = async () => {
+    setIsLoading(true);
+    try {
+      const [fetchedUsers, fetchedQuestions, fetchedAssignments] = await Promise.all([
+        fetchSheetData('getUsers'),
+        fetchSheetData('getQuestions'),
+        fetchSheetData('getAssignments')
+      ]);
+      setUsers(fetchedUsers || []);
+      setQuestions(fetchedQuestions || []);
+      setAssignments(fetchedAssignments || []);
+    } catch (err) {
+      showToast("Gagal memuat data dari Spreadsheet", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadInitialData();
+  }, []);
+
+  // --- UTILS ---
+  const showToast = (message, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 3000);
+  };
+
+  const handleLogout = () => {
+    setAppUser(null);
+    setView('login');
+  };
+
+  // Refresh Data Manual (Untuk Admin)
+  const refreshData = () => {
+    loadInitialData();
+    showToast("Data disinkronkan dengan Spreadsheet", "success");
+  };
+
+  // --- RENDERING ROUTER ---
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-slate-900"></div>
+        <p className="text-slate-600 font-medium animate-pulse">Menghubungkan ke Database...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
+      {/* Peringatan jika belum diconnect ke Google Sheet sungguhan */}
+      {!GOOGLE_SCRIPT_URL && (
+        <div className="bg-yellow-100 text-yellow-800 px-4 py-2 text-xs font-bold text-center flex justify-center items-center gap-2">
+          <Database size={14} /> 
+          MODE SIMULASI OFFLINE AKTIF. Masukkan URL Google Apps Script pada kode untuk menghubungkan ke Spreadsheet asli.
+        </div>
+      )}
+
+      {/* HEADER */}
+      <header className="bg-slate-900 text-white py-6 shadow-md border-b-4 border-yellow-500">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="flex items-center gap-4 mb-4 md:mb-0">
+              <div className="bg-yellow-500 p-3 rounded-lg text-slate-900">
+                <PlaneTakeoff size={32} strokeWidth={2.5} />
+              </div>
+              <div className="text-center md:text-left">
+                <h1 className="text-2xl font-bold tracking-wide uppercase text-white">
+                  E CREW Type Rating Exam System
+                </h1>
+                <h2 className="text-sm font-medium text-slate-300">
+                  Aircraft Type Rating Examination Platform
+                </h2>
+                <h3 className="text-xs font-semibold text-yellow-500 mt-1 tracking-wider">
+                  TRANSWISATA PRIMA AVIATION
+                </h3>
+              </div>
+            </div>
+            
+            {appUser && (
+              <div className="flex items-center gap-4 bg-slate-800 px-4 py-2 rounded-full border border-slate-700">
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-bold text-white">{appUser.name}</p>
+                  <p className="text-xs text-yellow-500 capitalize">{appUser.role}</p>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="p-2 bg-slate-700 hover:bg-red-600 rounded-full transition-colors text-white"
+                  title="Logout"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
+        {view === 'login' && (
+          <LoginView 
+            setView={setView} 
+            setAppUser={setAppUser} 
+            users={users} 
+            showToast={showToast} 
+            fetchSheetData={fetchSheetData}
+          />
+        )}
+        {view === 'register' && (
+          <RegisterView 
+            setView={setView} 
+            users={users} 
+            showToast={showToast} 
+            fetchSheetData={fetchSheetData}
+            refreshData={refreshData}
+          />
+        )}
+        {view === 'admin' && appUser?.role === 'admin' && (
+          <AdminDashboard 
+            users={users} 
+            questions={questions} 
+            assignments={assignments} 
+            showToast={showToast} 
+            fetchSheetData={fetchSheetData}
+            refreshData={refreshData}
+          />
+        )}
+        {view === 'user' && appUser?.role === 'user' && (
+          <UserDashboard 
+            appUser={appUser} 
+            assignments={assignments} 
+            setView={setView} 
+          />
+        )}
+        {view === 'exam' && appUser?.role === 'user' && (
+          <ExamRunner 
+            appUser={appUser} 
+            assignments={assignments} 
+            questions={questions} 
+            setView={setView}
+            showToast={showToast}
+            fetchSheetData={fetchSheetData}
+            refreshData={refreshData}
+          />
+        )}
+      </main>
+
+      {/* TOAST NOTIFICATION */}
+      {toast.show && (
+        <div className="fixed bottom-4 right-4 z-50 animate-fade-in-up">
+          <div className={`px-6 py-4 rounded-lg shadow-xl flex items-center gap-3 text-white font-medium ${
+            toast.type === 'error' ? 'bg-red-600' : 
+            toast.type === 'success' ? 'bg-green-600' : 'bg-slate-800'
+          }`}>
+            {toast.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
+            {toast.message}
+          </div>
+        </div>
+      )}
+      
+      {/* FOOTER */}
+      <footer className="bg-slate-900 text-slate-400 py-6 text-center text-sm border-t border-slate-800">
+        <p>&copy; {new Date().getFullYear()} Transwisata Prima Aviation. All rights reserved.</p>
+        <p className="text-xs mt-1">E-Crew Professional Evaluation System | Linked to Google Sheets</p>
+      </footer>
+    </div>
+  );
+}
+
+// ==========================================
+// VIEWS
+// ==========================================
+
+function LoginView({ setView, setAppUser, users, showToast, fetchSheetData }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    
+    // Check Admin
+    if (username === 'admin' && password === 'admin123') {
+      setAppUser({ role: 'admin', name: 'System Administrator', username: 'admin' });
+      setView('admin');
+      showToast('Welcome, Administrator', 'success');
+      setIsLoggingIn(false);
+      return;
+    }
+
+    // Check User
+    const user = users.find(u => u.username === username && u.password === password);
+    if (user) {
+      // Catat login ke Sheet "LOG IN" secara asinkron
+      fetchSheetData('logLogin', { username, password });
+      
+      setAppUser({ ...user, role: 'user' });
+      setView('user');
+      showToast(`Welcome back, ${user.name}`, 'success');
+    } else {
+      showToast('Username atau password salah', 'error');
+    }
+    setIsLoggingIn(false);
+  };
+
+  return (
+    <div className="max-w-md mx-auto mt-10">
+      <div className="bg-white p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-slate-800">Portal Login</h2>
+          <p className="text-slate-500 mt-2 text-sm">Silakan masukkan kredensial Anda</p>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Username</label>
+            <input 
+              type="text" 
+              required
+              className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-all bg-slate-50"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Masukkan username"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+            <input 
+              type="password" 
+              required
+              className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none transition-all bg-slate-50"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </div>
+          
+          <button 
+            type="submit" 
+            disabled={isLoggingIn}
+            className="w-full bg-slate-900 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-800 transition-colors shadow-md hover:shadow-lg flex justify-center items-center gap-2 disabled:opacity-70"
+          >
+            {isLoggingIn ? 'Memeriksa...' : <>Masuk <ArrowRight size={18} /></>}
+          </button>
+        </form>
+
+        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+          <p className="text-sm text-slate-600">
+            Kru baru?{' '}
+            <button 
+              onClick={() => setView('register')}
+              className="text-blue-600 font-bold hover:underline"
+            >
+              Daftar di sini
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RegisterView({ setView, users, showToast, fetchSheetData, refreshData }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    username: '',
+    password: '',
+    rank: RANKS[0],
+    typeRating: TYPE_RATINGS[0],
+    licenceNo: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validation
+    if (users.some(u => u.username === formData.username)) {
+      showToast('Username sudah digunakan', 'error');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Simpan ke Google Sheets via fetchSheetData
+      const payload = {
+        ...formData,
+        createdAt: new Date().toISOString()
+      };
+      
+      await fetchSheetData('registerUser', payload);
+      
+      showToast('Registrasi berhasil! Silakan login.', 'success');
+      refreshData(); // Sinkronisasi ulang data
+      setView('login');
+    } catch (error) {
+      showToast('Terjadi kesalahan saat registrasi ke Spreadsheet', 'error');
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-xl mx-auto mt-6">
+      <div className="bg-white p-8 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-2 bg-yellow-500"></div>
+        
+        <div className="flex items-center gap-3 mb-6 pb-6 border-b border-slate-100">
+          <div className="bg-blue-50 p-2 rounded-lg">
+            <UserPlus className="text-blue-600" size={24} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-800">Registrasi Kru</h2>
+            <p className="text-slate-500 text-sm">Data akan tersimpan di Google Sheets</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Lengkap</label>
+              <input 
+                type="text" required
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50"
+                value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="Cth: Budi Santoso"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Username</label>
+              <input 
+                type="text" required
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50"
+                value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})}
+                placeholder="Untuk login"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+              <input 
+                type="password" required
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50"
+                value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Rank</label>
+              <select 
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50"
+                value={formData.rank} onChange={(e) => setFormData({...formData, rank: e.target.value})}
+              >
+                {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Type Rating</label>
+              <select 
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50"
+                value={formData.typeRating} onChange={(e) => setFormData({...formData, typeRating: e.target.value})}
+              >
+                {TYPE_RATINGS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 mb-1">No. Licence</label>
+              <input 
+                type="text" required
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-slate-50"
+                value={formData.licenceNo} onChange={(e) => setFormData({...formData, licenceNo: e.target.value})}
+                placeholder="Cth: ATPL/ 20-0007"
+              />
+            </div>
+          </div>
+          
+          <div className="flex gap-3 pt-4">
+            <button 
+              type="button"
+              onClick={() => setView('login')}
+              className="flex-1 bg-white text-slate-700 font-bold py-3 px-4 rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors"
+            >
+              Batal
+            </button>
+            <button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="flex-1 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-md disabled:opacity-50 flex justify-center items-center gap-2"
+            >
+              {isSubmitting ? 'Menyimpan...' : <>Daftar Sekarang <Database size={16}/></>}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- ADMIN COMPONENTS ---
+
+function AdminDashboard({ users, questions, assignments, showToast, fetchSheetData, refreshData }) {
+  const [activeTab, setActiveTab] = useState('users'); // users, questions, results
+
+  return (
+    <div className="flex flex-col md:flex-row gap-6">
+      {/* SIDEBAR */}
+      <div className="w-full md:w-64 shrink-0 space-y-4">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden sticky top-6">
+          <div className="p-4 bg-slate-50 border-b border-slate-200">
+            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+              <BookOpen size={18} className="text-yellow-600"/>
+              Menu Admin
+            </h3>
+          </div>
+          <div className="p-2 space-y-1">
+            <button 
+              onClick={() => setActiveTab('users')}
+              className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3
+                ${activeTab === 'users' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              <Users size={18} /> Daftar User & Assign
+            </button>
+            <button 
+              onClick={() => setActiveTab('questions')}
+              className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3
+                ${activeTab === 'questions' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              <ClipboardList size={18} /> Question Bank
+            </button>
+            <button 
+              onClick={() => setActiveTab('results')}
+              className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3
+                ${activeTab === 'results' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+            >
+              <Award size={18} /> Hasil Ujian
+            </button>
+          </div>
+        </div>
+
+        <button 
+          onClick={refreshData}
+          className="w-full bg-blue-100 text-blue-700 border border-blue-200 font-bold py-3 rounded-xl hover:bg-blue-200 transition-colors flex items-center justify-center gap-2 shadow-sm"
+        >
+          <Database size={16} /> Sync Spreadsheet
+        </button>
+      </div>
+
+      {/* CONTENT */}
+      <div className="flex-1">
+        {activeTab === 'users' && <AdminUsers users={users} questions={questions} assignments={assignments} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
+        {activeTab === 'questions' && <AdminQuestions questions={questions} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
+        {activeTab === 'results' && <AdminResults assignments={assignments} users={users} />}
+      </div>
+    </div>
+  );
+}
+
+function AdminUsers({ users, questions, assignments, showToast, fetchSheetData, refreshData }) {
+  const handleAssign = async (user) => {
+    const typeRatingQuestions = questions.filter(q => q.typeRating === user.typeRating);
+    if (typeRatingQuestions.length === 0) {
+      showToast(`Tidak ada soal untuk Type Rating ${user.typeRating}`, 'error');
+      return;
+    }
+
+    const existing = assignments.find(a => a.userId === user.id && a.status === 'pending');
+    if (existing) {
+      showToast(`User ini sudah memiliki ujian aktif yang belum dikerjakan`, 'error');
+      return;
+    }
+
+    try {
+      const payload = {
+        userId: user.id || user.username, // Jika id tidak ada
+        userName: user.name,
+        typeRating: user.typeRating,
+        status: 'pending',
+        score: '',
+        assignedAt: new Date().toISOString(),
+        completedAt: ''
+      };
+      
+      await fetchSheetData('addAssignment', payload);
+      showToast(`Ujian berhasil ditugaskan ke ${user.name}`, 'success');
+      refreshData();
+    } catch (err) {
+      showToast('Gagal menugaskan ujian ke Spreadsheet', 'error');
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+      <div className="p-6 border-b border-slate-200">
+        <h2 className="text-xl font-bold text-slate-800">Manajemen User & Assignment</h2>
+        <p className="text-slate-500 text-sm mt-1">Daftar kru terdaftar dari Google Sheets.</p>
+      </div>
+      
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+              <th className="p-4 font-semibold">Nama / Username</th>
+              <th className="p-4 font-semibold">Rank & Licence</th>
+              <th className="p-4 font-semibold text-center">Type Rating</th>
+              <th className="p-4 font-semibold text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {users.length === 0 ? (
+              <tr><td colSpan="4" className="p-8 text-center text-slate-500">Belum ada user terdaftar.</td></tr>
+            ) : (
+              users.map((u, i) => (
+                <tr key={u.id || i} className="hover:bg-slate-50 transition-colors">
+                  <td className="p-4">
+                    <div className="font-semibold text-slate-800">{u.name}</div>
+                    <div className="text-xs text-slate-500">@{u.username}</div>
+                  </td>
+                  <td className="p-4">
+                    <div className="inline-block px-2 py-1 bg-slate-100 rounded text-xs font-bold text-slate-700 mb-1">{u.rank}</div>
+                    <div className="text-xs text-slate-600">{u.licenceNo}</div>
+                  </td>
+                  <td className="p-4 text-center">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                      {u.typeRating}
+                    </span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <button 
+                      onClick={() => handleAssign(u)}
+                      className="inline-flex items-center gap-1 bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded shadow hover:bg-slate-800 transition-colors"
+                    >
+                      <Plus size={14} /> Assign Exam
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function AdminQuestions({ questions, showToast, fetchSheetData, refreshData }) {
+  const [showForm, setShowForm] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    typeRating: TYPE_RATINGS[0],
+    text: '',
+    optA: '', optB: '', optC: '', optD: '',
+    correctAnswer: 'A'
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const payload = {
+        typeRating: formData.typeRating,
+        text: formData.text,
+        optA: formData.optA,
+        optB: formData.optB,
+        optC: formData.optC,
+        optD: formData.optD,
+        correctAnswer: formData.correctAnswer,
+        createdAt: new Date().toISOString()
+      };
+      await fetchSheetData('addQuestion', payload);
+      showToast('Soal berhasil ditambahkan ke Spreadsheet', 'success');
+      setFormData({ ...formData, text: '', optA: '', optB: '', optC: '', optD: '', correctAnswer: 'A' });
+      setShowForm(false);
+      refreshData();
+    } catch (err) {
+      showToast('Gagal menambah soal', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await fetchSheetData('deleteQuestion', { id });
+      showToast('Soal dihapus dari Spreadsheet', 'success');
+      refreshData();
+    } catch (err) {
+      showToast('Gagal menghapus soal', 'error');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Question Bank</h2>
+          <p className="text-slate-500 text-sm mt-1">Kelola soal di Google Sheets.</p>
+        </div>
+        <button 
+          onClick={() => setShowForm(!showForm)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-blue-700 transition-colors flex items-center gap-2"
+        >
+          {showForm ? 'Tutup Form' : <><Plus size={16}/> Tambah Soal</>}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-white rounded-xl shadow-md border-l-4 border-l-blue-500 p-6 animate-fade-in-up">
+          <h3 className="font-bold text-lg mb-4 text-slate-800">Buat Soal Baru</h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Type Rating</label>
+              <select 
+                className="w-full md:w-1/3 px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 bg-slate-50"
+                value={formData.typeRating} onChange={e => setFormData({...formData, typeRating: e.target.value})}
+              >
+                {TYPE_RATINGS.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Pertanyaan</label>
+              <textarea 
+                required rows="3"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 bg-slate-50"
+                value={formData.text} onChange={e => setFormData({...formData, text: e.target.value})}
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {['A', 'B', 'C', 'D'].map((opt) => (
+                <div key={opt}>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Opsi {opt}</label>
+                  <input 
+                    type="text" required
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 bg-slate-50"
+                    value={formData[`opt${opt}`]} onChange={e => setFormData({...formData, [`opt${opt}`]: e.target.value})}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Jawaban Benar</label>
+              <div className="flex gap-4">
+                {['A', 'B', 'C', 'D'].map((opt) => (
+                  <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" name="correctAnswer" value={opt}
+                      checked={formData.correctAnswer === opt}
+                      onChange={e => setFormData({...formData, correctAnswer: e.target.value})}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="font-bold text-slate-700">{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-4 flex justify-end">
+              <button disabled={isSaving} type="submit" className="bg-slate-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-slate-800 disabled:opacity-50 flex gap-2 items-center">
+                {isSaving ? 'Menyimpan...' : <><Database size={16}/> Simpan Soal</>}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* QUESTION LIST */}
+      <div className="space-y-4">
+        {TYPE_RATINGS.map(tr => {
+          const trQuestions = questions.filter(q => q.typeRating === tr);
+          if (trQuestions.length === 0) return null;
+          return (
+            <div key={tr} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+              <div className="bg-slate-100 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                <span className="font-bold text-slate-800">Type Rating: {tr}</span>
+                <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full font-bold">{trQuestions.length} Soal</span>
+              </div>
+              <div className="divide-y divide-slate-100">
+                {trQuestions.map((q, idx) => (
+                  <div key={q.id || idx} className="p-4 flex gap-4 hover:bg-slate-50">
+                    <div className="font-bold text-slate-400">{idx + 1}.</div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-slate-800 mb-2">{q.text}</p>
+                      <div className="grid grid-cols-2 gap-2 text-sm text-slate-600">
+                        <div className={q.correctAnswer === 'A' ? 'font-bold text-green-600' : ''}>A. {q.optA}</div>
+                        <div className={q.correctAnswer === 'B' ? 'font-bold text-green-600' : ''}>B. {q.optB}</div>
+                        <div className={q.correctAnswer === 'C' ? 'font-bold text-green-600' : ''}>C. {q.optC}</div>
+                        <div className={q.correctAnswer === 'D' ? 'font-bold text-green-600' : ''}>D. {q.optD}</div>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => handleDelete(q.id)}
+                      className="text-red-500 hover:bg-red-50 p-2 rounded-lg h-fit transition-colors"
+                      title="Hapus Soal"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AdminResults({ assignments }) {
+  const completed = assignments.filter(a => a.status === 'completed').sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+      <div className="p-6 border-b border-slate-200">
+        <h2 className="text-xl font-bold text-slate-800">Hasil Ujian</h2>
+        <p className="text-slate-500 text-sm mt-1">Rekam jejak nilai ujian kru.</p>
+      </div>
+      
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+              <th className="p-4 font-semibold">Nama / User</th>
+              <th className="p-4 font-semibold">Type Rating</th>
+              <th className="p-4 font-semibold">Tanggal Selesai</th>
+              <th className="p-4 font-semibold text-right">Nilai</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {completed.length === 0 ? (
+              <tr><td colSpan="4" className="p-8 text-center text-slate-500">Belum ada ujian yang diselesaikan.</td></tr>
+            ) : (
+              completed.map((a, i) => (
+                <tr key={a.id || i} className="hover:bg-slate-50">
+                  <td className="p-4 font-semibold text-slate-800">{a.userName}</td>
+                  <td className="p-4">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800">
+                      {a.typeRating}
+                    </span>
+                  </td>
+                  <td className="p-4 text-sm text-slate-600">
+                    {a.completedAt ? new Date(a.completedAt).toLocaleDateString('id-ID', {
+                      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'
+                    }) : '-'}
+                  </td>
+                  <td className="p-4 text-right">
+                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${
+                      Number(a.score) >= 80 ? 'bg-green-100 text-green-700' : 
+                      Number(a.score) >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {Number(a.score).toFixed(0)}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// --- USER COMPONENTS ---
+
+function UserDashboard({ appUser, assignments, setView }) {
+  // Samakan userId (bisa pakai id unik atau fallback ke username)
+  const myAssignments = assignments.filter(a => a.userId === appUser.id || a.userId === appUser.username);
+  const pending = myAssignments.filter(a => a.status === 'pending');
+  const completed = myAssignments.filter(a => a.status === 'completed').sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      {/* Profile Card */}
+      <div className="bg-slate-900 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
+        <div className="absolute right-[-20px] top-[-20px] opacity-10">
+          <PlaneTakeoff size={180} />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
+          <div className="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center text-3xl font-bold border-4 border-yellow-500">
+            {appUser.name.charAt(0)}
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold">{appUser.name}</h2>
+            <div className="flex flex-wrap gap-3 mt-2">
+              <span className="bg-slate-800 px-3 py-1 rounded-full text-xs font-medium border border-slate-700">
+                Rank: <span className="text-yellow-500 font-bold">{appUser.rank}</span>
+              </span>
+              <span className="bg-slate-800 px-3 py-1 rounded-full text-xs font-medium border border-slate-700">
+                Licence: <span className="text-white font-bold">{appUser.licenceNo}</span>
+              </span>
+              <span className="bg-slate-800 px-3 py-1 rounded-full text-xs font-medium border border-slate-700">
+                Rating: <span className="text-blue-400 font-bold">{appUser.typeRating}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pending Exams */}
+      <div>
+        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <FileText size={20} className="text-blue-600"/> Ujian Tersedia
+        </h3>
+        {pending.length === 0 ? (
+          <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm text-slate-500">
+            Tidak ada ujian yang ditugaskan saat ini.
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {pending.map((a, i) => (
+              <div key={a.id || i} className="bg-white rounded-xl border border-blue-200 shadow-sm p-6 hover:shadow-md transition-shadow relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h4 className="font-bold text-lg text-slate-800">Type Rating Exam</h4>
+                    <p className="text-blue-600 font-bold text-sm">{a.typeRating}</p>
+                  </div>
+                  <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">Baru</span>
+                </div>
+                <p className="text-sm text-slate-600 mb-6">Ujian ini telah ditugaskan kepada Anda. Siapkan diri sebelum memulai.</p>
+                <button 
+                  onClick={() => setView('exam')}
+                  className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow flex justify-center items-center gap-2"
+                >
+                  Mulai Ujian <ArrowRight size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Completed Exams */}
+      <div>
+        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <CheckSquare size={20} className="text-green-600"/> Riwayat Ujian
+        </h3>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+                <th className="p-4 font-semibold">Tipe Ujian</th>
+                <th className="p-4 font-semibold">Tanggal Selesai</th>
+                <th className="p-4 font-semibold text-right">Nilai Akhir</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {completed.length === 0 ? (
+                <tr><td colSpan="3" className="p-8 text-center text-slate-500">Belum ada riwayat ujian.</td></tr>
+              ) : (
+                completed.map((a, i) => (
+                  <tr key={a.id || i}>
+                    <td className="p-4 font-semibold text-slate-800">Exam {a.typeRating}</td>
+                    <td className="p-4 text-sm text-slate-600">
+                      {a.completedAt ? new Date(a.completedAt).toLocaleDateString('id-ID', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                      }) : '-'}
+                    </td>
+                    <td className="p-4 text-right">
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${
+                        Number(a.score) >= 80 ? 'bg-green-100 text-green-700' : 
+                        Number(a.score) >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {Number(a.score).toFixed(0)}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- EXAM RUNNER ---
+
+function ExamRunner({ appUser, assignments, questions, setView, showToast, fetchSheetData, refreshData }) {
+  const assignment = assignments.find(a => (a.userId === appUser.id || a.userId === appUser.username) && a.status === 'pending');
+  const examQuestions = questions.filter(q => q.typeRating === (assignment?.typeRating || ''));
+  
+  const [answers, setAnswers] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!assignment) {
+    return (
+      <div className="text-center py-20">
+        <h2 className="text-2xl font-bold text-slate-800">Ujian tidak ditemukan</h2>
+        <button onClick={() => setView('user')} className="mt-4 text-blue-600 underline">Kembali ke Dashboard</button>
+      </div>
+    );
+  }
+
+  if (examQuestions.length === 0) {
+    return (
+      <div className="text-center py-20 bg-white rounded-xl shadow p-8 max-w-2xl mx-auto border border-red-200">
+        <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
+        <h2 className="text-2xl font-bold text-slate-800">Soal Belum Tersedia</h2>
+        <p className="text-slate-600 mt-2">Ujian untuk Type Rating {assignment.typeRating} belum memiliki soal di database. Silakan hubungi Administrator.</p>
+        <button onClick={() => setView('user')} className="mt-6 bg-slate-900 text-white px-6 py-2 rounded font-bold">Kembali</button>
+      </div>
+    );
+  }
+
+  const handleSelect = (qId, option) => {
+    setAnswers({ ...answers, [qId]: option });
+  };
+
+  const handleSubmit = async () => {
+    if (Object.keys(answers).length < examQuestions.length) {
+      if (!window.confirm('Ada soal yang belum dijawab. Yakin ingin mengumpulkan?')) {
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+    
+    let correct = 0;
+    examQuestions.forEach(q => {
+      // Pastikan property qId aman
+      const questionId = q.id || q.text; // fallback ke text jika id belum rapi
+      if (answers[questionId] === q.correctAnswer) {
+        correct++;
+      }
+    });
+    
+    const score = (correct / examQuestions.length) * 100;
+
+    try {
+      await fetchSheetData('submitExam', {
+        id: assignment.id,
+        status: 'completed',
+        score: score.toFixed(0),
+        completedAt: new Date().toISOString()
+      });
+      
+      showToast(`Ujian Selesai! Nilai Anda: ${score.toFixed(0)}`, 'success');
+      refreshData();
+      setView('user');
+    } catch (err) {
+      showToast('Gagal mengirim hasil ujian ke Spreadsheet', 'error');
+      console.error(err);
+    } finally {
+       setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto">
+      {/* Exam Header */}
+      <div className="bg-slate-900 text-white p-6 rounded-t-xl sticky top-0 z-20 shadow-md flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+          <h2 className="text-xl font-bold uppercase tracking-wide">
+            Type Rating Exam: <span className="text-yellow-500">{assignment.typeRating}</span>
+          </h2>
+          <p className="text-sm text-slate-300 mt-1">Kandidat: {appUser.name} | Lisensi: {appUser.licenceNo}</p>
+        </div>
+        <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 flex items-center gap-2 font-bold text-sm">
+          <span>Progres:</span>
+          <span className="text-blue-400">{Object.keys(answers).length} / {examQuestions.length}</span>
+        </div>
+      </div>
+
+      {/* Questions Form */}
+      <div className="bg-slate-50 p-6 sm:p-8 border-x border-b border-slate-200 rounded-b-xl shadow-sm mb-10 space-y-8">
+        {examQuestions.map((q, idx) => {
+          const qId = q.id || q.text;
+          return (
+            <div key={qId} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
+               {answers[qId] && (
+                 <div className="absolute top-0 right-0 bg-green-500 text-white p-1 rounded-bl-lg">
+                   <CheckCircle size={16} />
+                 </div>
+               )}
+              <h3 className="text-lg font-semibold text-slate-800 mb-4 flex gap-3">
+                <span className="text-slate-400 font-bold">{idx + 1}.</span> 
+                <span>{q.text}</span>
+              </h3>
+              <div className="space-y-3 pl-8">
+                {['A', 'B', 'C', 'D'].map((opt) => (
+                  <label 
+                    key={opt} 
+                    className={`flex items-center gap-4 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                      answers[qId] === opt 
+                        ? 'border-blue-500 bg-blue-50/50' 
+                        : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                      answers[qId] === opt ? 'border-blue-500' : 'border-slate-300'
+                    }`}>
+                      {answers[qId] === opt && <div className="w-3 h-3 bg-blue-500 rounded-full"></div>}
+                    </div>
+                    <span className="font-bold text-slate-600 w-6">{opt}.</span>
+                    <span className="text-slate-800">{q[`opt${opt}`]}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+
+        <div className="pt-6 border-t border-slate-200 flex justify-end">
+          <button 
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="bg-green-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl disabled:opacity-50 text-lg flex items-center gap-2"
+          >
+            {isSubmitting ? 'Mengirim...' : <><CheckSquare size={24}/> Selesai & Kumpulkan</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
