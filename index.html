@@ -1,1553 +1,862 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>E-CREW Exam System</title>
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- FontAwesome untuk Ikon -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
-  <!-- React & ReactDOM (Standalone) -->
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  
-  <!-- Babel untuk menerjemahkan JSX di dalam browser -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <style>
-    /* Custom Animations */
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in-up {
-      animation: fadeInUp 0.4s ease-out forwards;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E CREW Type Rating Exam System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; }
+        .bg-aviation {
+            background-image: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1540962351504-03099e0a754b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800">
-  <div id="root">
-    <div class="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-slate-900"></div>
-      <p class="text-slate-600 font-medium">Memuat Aplikasi...</p>
+<body class="text-gray-800 antialiased h-screen overflow-hidden flex flex-col">
+
+    <!-- GLOBAL LOADING SCREEN -->
+    <div id="loading-screen" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white fade-in transition-opacity duration-500">
+        <i class="fas fa-circle-notch fa-spin text-5xl mb-4 text-blue-500"></i>
+        <h2 class="text-xl font-bold tracking-wider">Menghubungkan Database</h2>
+        <p class="text-slate-400 text-sm mt-2">Sinkronisasi data dengan Google Sheets...</p>
     </div>
-  </div>
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-
-    // Helper Component untuk Ikon menggunakan FontAwesome
-    const Icon = ({ name, size = 16, className = "" }) => (
-      <i className={`fa-solid fa-${name} ${className}`} style={{ fontSize: `${size}px` }}></i>
-    );
-
-    // ==========================================
-    // KONFIGURASI GOOGLE SHEETS
-    // ==========================================
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbybHorRMXWnA_zqXctfS4p5OYK_huzmo0Il74BE4ugKcpHSDm-OFuCWGLK19n41qNGd1g/exec"; 
-
-    // --- CONSTANTS ---
-    const TYPE_RATINGS = ['GIV', 'BE300', 'CA212', 'B412', 'AW109'];
-    const RANKS = ['CCP', 'FI', 'GI', 'Capt', 'FO'];
-
-    function App() {
-      // State Aplikasi
-      const [isLoading, setIsLoading] = useState(true);
-      const [appUser, setAppUser] = useState(null);
-      const [view, setView] = useState('login');
-
-      // Data State
-      const [users, setUsers] = useState([]);
-      const [questions, setQuestions] = useState([]);
-      const [assignments, setAssignments] = useState([]);
-      const [instructors, setInstructors] = useState([]);
-
-      // Toast State
-      const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
-
-      // --- GOOGLE SHEETS API SERVICE ---
-      const fetchSheetData = async (action, payload = null) => {
-        if (!GOOGLE_SCRIPT_URL) {
-          return new Promise((resolve) => {
-            setTimeout(() => {
-              let data;
-              if (action === 'getUsers') data = JSON.parse(localStorage.getItem('sheet_users') || '[]');
-              if (action === 'getQuestions') data = JSON.parse(localStorage.getItem('sheet_questions') || '[]');
-              if (action === 'getAssignments') data = JSON.parse(localStorage.getItem('sheet_assignments') || '[]');
-              if (action === 'getInstructors') data = JSON.parse(localStorage.getItem('sheet_instructors') || '[]');
-              
-              if (action === 'registerUser') {
-                const current = JSON.parse(localStorage.getItem('sheet_users') || '[]');
-                payload.id = Date.now().toString();
-                current.push(payload);
-                localStorage.setItem('sheet_users', JSON.stringify(current));
-                data = { success: true };
-              }
-              if (action === 'logLogin') data = { success: true };
-              if (action === 'addQuestion') {
-                const current = JSON.parse(localStorage.getItem('sheet_questions') || '[]');
-                payload.id = Date.now().toString();
-                current.push(payload);
-                localStorage.setItem('sheet_questions', JSON.stringify(current));
-                data = { success: true };
-              }
-              if (action === 'deleteQuestion') {
-                const current = JSON.parse(localStorage.getItem('sheet_questions') || '[]');
-                const filtered = current.filter(q => q.id !== payload.id);
-                localStorage.setItem('sheet_questions', JSON.stringify(filtered));
-                data = { success: true };
-              }
-              if (action === 'deleteAllQuestions') {
-                localStorage.setItem('sheet_questions', '[]');
-                data = { success: true };
-              }
-              if (action === 'deleteQuestionGroup') {
-                const current = JSON.parse(localStorage.getItem('sheet_questions') || '[]');
-                const filtered = current.filter(q => !(q.typeRating === payload.typeRating && q.typeExam === payload.typeExam && q.modelSoal === payload.modelSoal));
-                localStorage.setItem('sheet_questions', JSON.stringify(filtered));
-                data = { success: true };
-              }
-              if (action === 'updateQuestion') {
-                const current = JSON.parse(localStorage.getItem('sheet_questions') || '[]');
-                const index = current.findIndex(q => q.id === payload.id);
-                if (index > -1) {
-                  current[index] = { ...current[index], ...payload };
-                  localStorage.setItem('sheet_questions', JSON.stringify(current));
-                }
-                data = { success: true };
-              }
-              if (action === 'deleteUser') {
-                const current = JSON.parse(localStorage.getItem('sheet_users') || '[]');
-                const filtered = current.filter(u => u.id !== payload.id);
-                localStorage.setItem('sheet_users', JSON.stringify(filtered));
-                data = { success: true };
-              }
-              if (action === 'updateUser') {
-                const current = JSON.parse(localStorage.getItem('sheet_users') || '[]');
-                const index = current.findIndex(u => u.id === payload.id);
-                if (index > -1) {
-                  current[index] = { ...current[index], ...payload };
-                  localStorage.setItem('sheet_users', JSON.stringify(current));
-                }
-                data = { success: true };
-              }
-              if (action === 'addInstructor') {
-                const current = JSON.parse(localStorage.getItem('sheet_instructors') || '[]');
-                payload.id = Date.now().toString();
-                current.push(payload);
-                localStorage.setItem('sheet_instructors', JSON.stringify(current));
-                data = { success: true };
-              }
-              if (action === 'updateInstructor') {
-                const current = JSON.parse(localStorage.getItem('sheet_instructors') || '[]');
-                const index = current.findIndex(i => i.id === payload.id);
-                if (index > -1) {
-                  current[index] = { ...current[index], ...payload };
-                  localStorage.setItem('sheet_instructors', JSON.stringify(current));
-                }
-                data = { success: true };
-              }
-              if (action === 'deleteInstructor') {
-                const current = JSON.parse(localStorage.getItem('sheet_instructors') || '[]');
-                const filtered = current.filter(i => i.id !== payload.id);
-                localStorage.setItem('sheet_instructors', JSON.stringify(filtered));
-                data = { success: true };
-              }
-              if (action === 'addAssignment') {
-                const current = JSON.parse(localStorage.getItem('sheet_assignments') || '[]');
-                payload.id = Date.now().toString();
-                current.push(payload);
-                localStorage.setItem('sheet_assignments', JSON.stringify(current));
-                data = { success: true };
-              }
-              if (action === 'submitExam') {
-                const current = JSON.parse(localStorage.getItem('sheet_assignments') || '[]');
-                const index = current.findIndex(a => a.id === payload.id);
-                if(index > -1) {
-                  current[index] = { ...current[index], ...payload };
-                  localStorage.setItem('sheet_assignments', JSON.stringify(current));
-                }
-                data = { success: true };
-              }
-              resolve(data);
-            }, 100); 
-          });
-        }
-
-        try {
-          let url = `${GOOGLE_SCRIPT_URL}?action=${action}`;
-          let options = { method: 'GET' };
-
-          if (payload) {
-            options = {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify(payload)
-            };
-          }
-
-          const response = await fetch(url, options);
-          const result = await response.json();
-          return result;
-        } catch (error) {
-          console.error("Error fetching Google Sheets:", error);
-          throw error;
-        }
-      };
-
-      const loadInitialData = async () => {
-        // Cek Cache Lokal agar loading terasa instan (Stale-while-revalidate)
-        const cachedUsers = JSON.parse(localStorage.getItem('cache_users'));
-        const cachedQuestions = JSON.parse(localStorage.getItem('cache_questions'));
-        const cachedAssignments = JSON.parse(localStorage.getItem('cache_assignments'));
-        const cachedInstructors = JSON.parse(localStorage.getItem('cache_instructors'));
-
-        if (cachedUsers && cachedQuestions && cachedAssignments && cachedInstructors) {
-          setUsers(cachedUsers);
-          setQuestions(cachedQuestions);
-          setAssignments(cachedAssignments);
-          setInstructors(cachedInstructors);
-          setIsLoading(false); // Langsung hilangkan layar loading
-        } else {
-          setIsLoading(true);
-        }
-
-        try {
-          const [fetchedUsers, fetchedQuestions, fetchedAssignments, fetchedInstructors] = await Promise.all([
-            fetchSheetData('getUsers'),
-            fetchSheetData('getQuestions'),
-            fetchSheetData('getAssignments'),
-            fetchSheetData('getInstructors')
-          ]);
-          
-          // Standarisasi key (Mengatasi perbedaan nama header di Spreadsheet seperti "Correct Answer" vs "correctAnswer")
-          const stdQuestions = (fetchedQuestions || []).map(q => ({
-            ...q,
-            correctAnswer: (q.correctAnswer || q['Correct Answer'] || q.jawaban || q.Jawaban || q['Kunci Jawaban'] || '').toString().trim().toUpperCase(),
-            optA: q.optA || q.opta || q['Opt A'] || q.opsiA || q['Opsi A'] || '',
-            optB: q.optB || q.optb || q['Opt B'] || q.opsiB || q['Opsi B'] || '',
-            optC: q.optC || q.optc || q['Opt C'] || q.opsiC || q['Opsi C'] || '',
-            optD: q.optD || q.optd || q['Opt D'] || q.opsiD || q['Opsi D'] || '',
-            text: q.text || q.Text || q.pertanyaan || q.Pertanyaan || q.Soal || q.soal || '',
-            typeRating: q.typeRating || q['Type Rating'] || q.typerating || '',
-            typeExam: q.typeExam || q['Type Exam'] || q.typeexam || 'Initial',
-            modelSoal: q.modelSoal || q['Model Soal'] || q.modelsoal || 'MODEL A',
-            section: q.section || q.Section || q.bagian || 'General'
-          }));
-
-          setUsers(fetchedUsers || []);
-          setQuestions(stdQuestions);
-          setAssignments(fetchedAssignments || []);
-          setInstructors(fetchedInstructors || []);
-
-          // Simpan pembaruan ke cache untuk kunjungan berikutnya
-          localStorage.setItem('cache_users', JSON.stringify(fetchedUsers || []));
-          localStorage.setItem('cache_questions', JSON.stringify(stdQuestions));
-          localStorage.setItem('cache_assignments', JSON.stringify(fetchedAssignments || []));
-          localStorage.setItem('cache_instructors', JSON.stringify(fetchedInstructors || []));
-        } catch (err) {
-          if (!cachedUsers) {
-            showToast("Gagal memuat data dari Spreadsheet", "error");
-          } else {
-            console.warn("Menggunakan data dari cache lokal (Offline)");
-          }
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      useEffect(() => {
-        loadInitialData();
-      }, []);
-
-      const showToast = (message, type = 'info') => {
-        setToast({ show: true, message, type });
-        setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 3000);
-      };
-
-      const handleLogout = () => {
-        setAppUser(null);
-        setView('login');
-      };
-
-      const refreshData = () => {
-        loadInitialData();
-        showToast("Data disinkronkan dengan Spreadsheet", "success");
-      };
-
-      if (isLoading) {
-        return (
-          <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-slate-900"></div>
-            <p className="text-slate-600 font-medium animate-pulse">Menghubungkan ke Database...</p>
-          </div>
-        );
-      }
-
-      return (
-        <div className="min-h-screen flex flex-col">
-          {!GOOGLE_SCRIPT_URL && (
-            <div className="bg-yellow-100 text-yellow-800 px-4 py-2 text-xs font-bold text-center flex justify-center items-center gap-2">
-              <Icon name="database" size={14} /> 
-              MODE SIMULASI OFFLINE AKTIF. Masukkan URL Google Apps Script pada kode untuk menghubungkan.
-            </div>
-          )}
-
-          {/* HEADER */}
-          <header className="bg-slate-900 text-white py-6 shadow-md border-b-4 border-yellow-500">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-              <div className="flex flex-col md:flex-row items-center justify-between">
-                <div className="flex items-center gap-4 mb-4 md:mb-0">
-                  <div className="bg-yellow-500 p-3 rounded-lg text-slate-900 flex items-center justify-center">
-                    <Icon name="plane-departure" size={32} />
-                  </div>
-                  <div className="text-center md:text-left">
-                    <h1 className="text-2xl font-bold tracking-wide uppercase text-white">
-                      E CREW Type Rating Exam
-                    </h1>
-                    <h2 className="text-sm font-medium text-slate-300">
-                      Aircraft Type Rating Examination Platform
-                    </h2>
-                    <h3 className="text-xs font-semibold text-yellow-500 mt-1 tracking-wider">
-                      TRANSWISATA PRIMA AVIATION
-                    </h3>
-                  </div>
-                </div>
-                
-                {appUser && (
-                  <div className="flex items-center gap-4 bg-slate-800 px-4 py-2 rounded-full border border-slate-700">
-                    <div className="text-right hidden sm:block">
-                      <p className="text-sm font-bold text-white">{appUser.name}</p>
-                      <p className="text-xs text-yellow-500 capitalize">{appUser.role}</p>
-                    </div>
-                    <button 
-                      onClick={handleLogout}
-                      className="p-2 bg-slate-700 hover:bg-red-600 rounded-full transition-colors text-white"
-                      title="Logout"
-                    >
-                      <Icon name="right-from-bracket" size={18} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </header>
-
-          {/* MAIN CONTENT AREA */}
-          <main className="flex-grow container mx-auto px-4 py-8 max-w-7xl">
-            {view === 'login' && <LoginView setView={setView} setAppUser={setAppUser} users={users} showToast={showToast} fetchSheetData={fetchSheetData} />}
-            {view === 'register' && <RegisterView setView={setView} users={users} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
-            {view === 'admin' && ['admin', 'instructor'].includes(appUser?.role) && <AdminDashboard appUser={appUser} users={users} questions={questions} assignments={assignments} instructors={instructors} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
-            {view === 'user' && appUser?.role === 'user' && <UserDashboard appUser={appUser} assignments={assignments} setView={setView} />}
-            {view === 'exam' && appUser?.role === 'user' && <ExamRunner appUser={appUser} assignments={assignments} questions={questions} setView={setView} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
-          </main>
-
-          {/* TOAST NOTIFICATION */}
-          {toast.show && (
-            <div className="fixed bottom-4 right-4 z-50 animate-fade-in-up">
-              <div className={`px-6 py-4 rounded-lg shadow-xl flex items-center gap-3 text-white font-medium ${
-                toast.type === 'error' ? 'bg-red-600' : 
-                toast.type === 'success' ? 'bg-green-600' : 'bg-slate-800'
-              }`}>
-                {toast.type === 'error' ? <Icon name="circle-exclamation" size={20} /> : <Icon name="circle-check" size={20} />}
-                {toast.message}
-              </div>
-            </div>
-          )}
-          
-          {/* FOOTER */}
-          <footer className="bg-slate-900 text-slate-400 py-6 text-center text-sm border-t border-slate-800">
-            <p>&copy; {new Date().getFullYear()} Transwisata Prima Aviation. All rights reserved.</p>
-            <p className="text-xs mt-1">E-Crew Professional Evaluation System | Linked to Google Sheets</p>
-          </footer>
-        </div>
-      );
-    }
-
-    function AdminDashboard({ appUser, users, questions, assignments, instructors, showToast, fetchSheetData, refreshData }) {
-      const isAdmin = appUser?.role === 'admin';
-      const [activeTab, setActiveTab] = useState(isAdmin ? 'users' : 'questions'); 
-
-      return (
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-64 shrink-0 space-y-4">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden sticky top-6">
-              <div className="p-4 bg-slate-50 border-b border-slate-200">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                  <Icon name={isAdmin ? "book-open" : "chalkboard-user"} size={18} className="text-yellow-600"/>
-                  Menu {isAdmin ? 'Admin' : 'Instructor'}
-                </h3>
-              </div>
-              <div className="p-2 space-y-1">
-                {isAdmin && (
-                  <button onClick={() => setActiveTab('users')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'users' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
-                    <Icon name="users" size={18} /> Daftar User & Assign
-                  </button>
-                )}
-                {isAdmin && (
-                  <button onClick={() => setActiveTab('instructors')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'instructors' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
-                    <Icon name="chalkboard-user" size={18} /> Data Instruktur
-                  </button>
-                )}
-                <button onClick={() => setActiveTab('questions')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'questions' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
-                  <Icon name="clipboard-list" size={18} /> Question Bank
-                </button>
-                <button onClick={() => setActiveTab('results')} className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 ${activeTab === 'results' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>
-                  <Icon name="award" size={18} /> Hasil Ujian
-                </button>
-              </div>
-            </div>
-
-            <button onClick={refreshData} className="w-full bg-blue-100 text-blue-700 border border-blue-200 font-bold py-3 rounded-xl hover:bg-blue-200 transition-colors flex items-center justify-center gap-2 shadow-sm">
-              <Icon name="database" size={16} /> Sync Spreadsheet
-            </button>
-          </div>
-
-          <div className="flex-1">
-            {activeTab === 'users' && isAdmin && <AdminUsers users={users} questions={questions} assignments={assignments} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
-            {activeTab === 'instructors' && isAdmin && <AdminInstructors instructors={instructors} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
-            {activeTab === 'questions' && <AdminQuestions questions={questions} showToast={showToast} fetchSheetData={fetchSheetData} refreshData={refreshData} />}
-            {activeTab === 'results' && <AdminResults assignments={assignments} users={users} />}
-          </div>
-        </div>
-      );
-    }
-
-    function AdminInstructors({ instructors, showToast, fetchSheetData, refreshData }) {
-      const [showForm, setShowForm] = useState(false);
-      const [isSaving, setIsSaving] = useState(false);
-      const [formData, setFormData] = useState({ name: '', loa: '' });
-      const [editModal, setEditModal] = useState({ show: false, data: null });
-
-      const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsSaving(true);
-        try {
-          await fetchSheetData('addInstructor', { ...formData, createdAt: new Date().toISOString() });
-          showToast('Data Instruktur berhasil ditambahkan', 'success');
-          setFormData({ name: '', loa: '' });
-          setShowForm(false);
-          refreshData();
-        } catch (err) {
-          showToast('Gagal menambah data instruktur', 'error');
-        } finally {
-          setIsSaving(false);
-        }
-      };
-
-      const handleDelete = async (id) => {
-        if (!window.confirm("Yakin ingin menghapus instruktur ini?")) return;
-        try {
-          await fetchSheetData('deleteInstructor', { id });
-          showToast('Data Instruktur dihapus', 'success');
-          refreshData();
-        } catch (err) { showToast('Gagal menghapus data', 'error'); }
-      };
-
-      const handleEditClick = (inst) => {
-        setEditModal({ show: true, data: { ...inst } });
-      };
-
-      const submitUpdate = async (e) => {
-        e.preventDefault();
-        try {
-          await fetchSheetData('updateInstructor', editModal.data);
-          showToast('Data Instruktur berhasil diperbarui', 'success');
-          setEditModal({ show: false, data: null });
-          refreshData();
-        } catch (err) {
-          showToast('Gagal memperbarui data', 'error');
-        }
-      };
-
-      return (
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform transition-transform duration-300 translate-x-full bg-white shadow-xl rounded-lg border-l-4 border-blue-600 p-4 min-w-[300px]">
+        <div class="flex items-center">
+            <i id="toast-icon" class="fas fa-info-circle text-blue-600 text-xl mr-3"></i>
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Manajemen Instruktur</h2>
-              <p className="text-slate-500 text-sm mt-1">Kelola data Instruktur dan LOA (Letter of Approval).</p>
+                <h4 id="toast-title" class="font-bold text-gray-800">Notifikasi</h4>
+                <p id="toast-message" class="text-sm text-gray-600">Pesan ada di sini.</p>
             </div>
-            <button onClick={() => setShowForm(!showForm)} className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 ${showForm ? 'bg-slate-200 text-slate-800' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
-              <Icon name={showForm ? "xmark" : "plus"} size={16}/> {showForm ? 'Tutup Form' : 'Tambah Instruktur'}
-            </button>
-          </div>
-
-          {showForm && (
-            <div className="bg-white rounded-xl shadow-md border-l-4 border-l-blue-500 p-6 animate-fade-in-up">
-              <h3 className="font-bold text-lg mb-4 text-slate-800">Tambah Data Instruktur</h3>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Nama Instruktur</label>
-                    <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
-                      value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Nama lengkap..." />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">LOA (Letter of Approval)</label>
-                    <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
-                      value={formData.loa} onChange={e => setFormData({...formData, loa: e.target.value})} placeholder="Nomor LOA..." />
-                  </div>
-                </div>
-                <div className="pt-4 flex justify-end">
-                  <button disabled={isSaving} type="submit" className="bg-slate-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-slate-800 disabled:opacity-50 flex gap-2 items-center">
-                    {isSaving ? 'Menyimpan...' : <><Icon name="database" size={16}/> Simpan Data</>}
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
-
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-                  <th className="p-4 font-semibold">Nama Instruktur</th>
-                  <th className="p-4 font-semibold">LOA</th>
-                  <th className="p-4 font-semibold text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {instructors.length === 0 ? (
-                  <tr><td colSpan="3" className="p-8 text-center text-slate-500">Belum ada data instruktur.</td></tr>
-                ) : (
-                  instructors.map((i) => (
-                    <tr key={i.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-4 font-semibold text-slate-800">{i.name}</td>
-                      <td className="p-4 text-slate-600"><span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-sm font-bold border border-blue-100">{i.loa}</span></td>
-                      <td className="p-4 text-right">
-                        <div className="flex justify-end gap-2 items-center">
-                          <button onClick={() => handleEditClick(i)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-                            <Icon name="pen-to-square" size={14} />
-                          </button>
-                          <button onClick={() => handleDelete(i.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
-                            <Icon name="trash-can" size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Modal Edit Instruktur */}
-          {editModal.show && (
-            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
-                <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
-                  <h3 className="font-bold text-lg text-slate-800">Edit Data Instruktur</h3>
-                  <button type="button" onClick={() => setEditModal({ show: false, data: null })} className="text-slate-400 hover:text-red-500 transition-colors">
-                    <Icon name="xmark" size={20} />
-                  </button>
-                </div>
-                
-                <form onSubmit={submitUpdate} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Instruktur</label>
-                    <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                      value={editModal.data?.name || ''} onChange={(e) => setEditModal({ ...editModal, data: { ...editModal.data, name: e.target.value } })} />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">LOA</label>
-                    <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                      value={editModal.data?.loa || ''} onChange={(e) => setEditModal({ ...editModal, data: { ...editModal.data, loa: e.target.value } })} />
-                  </div>
-                  
-                  <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
-                    <button type="button" onClick={() => setEditModal({ show: false, data: null })} className="px-4 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100 transition-colors">Batal</button>
-                    <button type="submit" className="px-5 py-2 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-md flex items-center gap-2 transition-colors">
-                      <Icon name="check" size={14}/> Simpan Perubahan
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
         </div>
-      );
-    }
+    </div>
 
-    function AdminUsers({ users, questions, assignments, showToast, fetchSheetData, refreshData }) {
-      const [assignModal, setAssignModal] = useState({ show: false, user: null, typeExam: 'Initial', modelSoal: 'MODEL A' });
-      const [editUserModal, setEditUserModal] = useState({ show: false, data: null });
+    <!-- MAIN APP CONTAINER -->
+    <div id="app" class="h-full w-full">
 
-      const handleAssignClick = (user) => {
-        const existing = assignments.find(a => (a.userId === user.id || a.userId === user.username) && a.status === 'pending');
-        if (existing) {
-          showToast(`User ini sudah memiliki ujian aktif yang belum dikerjakan`, 'error');
-          return;
-        }
-        setAssignModal({ show: true, user, typeExam: 'Initial', modelSoal: 'MODEL A' });
-      };
-
-      const submitAssign = async () => {
-        const { user, typeExam, modelSoal } = assignModal;
-        
-        // Cek ketersediaan soal berdasarkan kombinasi Type Rating + Type Exam + Model Soal
-        const examQuestions = questions.filter(q => 
-          q.typeRating === user.typeRating && 
-          q.typeExam === typeExam && 
-          q.modelSoal === modelSoal
-        );
-
-        if (examQuestions.length === 0) {
-          showToast(`Tidak ada soal untuk ${user.typeRating} - ${typeExam} - ${modelSoal}`, 'error');
-          return;
-        }
-
-        try {
-          const payload = {
-            userId: user.id || user.username, 
-            userName: user.name,
-            typeRating: user.typeRating,
-            typeExam: typeExam,
-            modelSoal: modelSoal,
-            status: 'pending',
-            score: '',
-            assignedAt: new Date().toISOString(),
-            completedAt: ''
-          };
-          
-          await fetchSheetData('addAssignment', payload);
-          showToast(`Ujian ${typeExam} (${modelSoal}) berhasil ditugaskan ke ${user.name}`, 'success');
-          setAssignModal({ show: false, user: null, typeExam: 'Initial', modelSoal: 'MODEL A' });
-          refreshData();
-        } catch (err) {
-          showToast('Gagal menugaskan ujian', 'error');
-        }
-      };
-
-      const handleDeleteUser = async (id) => {
-        if (!window.confirm("Yakin ingin menghapus user ini?")) return;
-        try {
-          await fetchSheetData('deleteUser', { id });
-          showToast('User berhasil dihapus', 'success');
-          refreshData();
-        } catch (err) { showToast('Gagal menghapus user', 'error'); }
-      };
-
-      const handleEditUserClick = (user) => {
-        setEditUserModal({ show: true, data: { ...user } });
-      };
-
-      const submitUpdateUser = async (e) => {
-        e.preventDefault();
-        try {
-          await fetchSheetData('updateUser', editUserModal.data);
-          showToast('Data user berhasil diperbarui', 'success');
-          setEditUserModal({ show: false, data: null });
-          refreshData();
-        } catch (err) {
-          showToast('Gagal memperbarui data user', 'error');
-        }
-      };
-
-      return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 relative">
-          <div className="p-6 border-b border-slate-200">
-            <h2 className="text-xl font-bold text-slate-800">Manajemen User & Assignment</h2>
-            <p className="text-slate-500 text-sm mt-1">Daftar kru terdaftar dari Google Sheets.</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-                  <th className="p-4 font-semibold">Nama / Username</th>
-                  <th className="p-4 font-semibold">Rank & Licence</th>
-                  <th className="p-4 font-semibold text-center">Type Rating</th>
-                  <th className="p-4 font-semibold text-right">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {users.length === 0 ? (
-                  <tr><td colSpan="4" className="p-8 text-center text-slate-500">Belum ada user terdaftar.</td></tr>
-                ) : (
-                  users.map((u, i) => (
-                    <tr key={u.id || i} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-4">
-                        <div className="font-semibold text-slate-800">{u.name}</div>
-                        <div className="text-xs text-slate-500">@{u.username}</div>
-                      </td>
-                      <td className="p-4">
-                        <div className="inline-block px-2 py-1 bg-slate-100 rounded text-xs font-bold text-slate-700 mb-1">{u.rank}</div>
-                        <div className="text-xs text-slate-600">{u.licenceNo}</div>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
-                          {u.typeRating}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex justify-end gap-2 items-center">
-                          <button onClick={() => handleEditUserClick(u)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit User">
-                            <Icon name="pen-to-square" size={14} />
-                          </button>
-                          <button onClick={() => handleDeleteUser(u.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus User">
-                            <Icon name="trash-can" size={14} />
-                          </button>
-                          <button onClick={() => handleAssignClick(u)} className="inline-flex items-center gap-1 bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded shadow hover:bg-slate-800 transition-colors">
-                            <Icon name="plus" size={14} /> Assign Exam
-                          </button>
+        <!-- ==================== LOGIN VIEW ==================== -->
+        <div id="view-login" class="bg-aviation h-full w-full flex items-center justify-center p-4 hidden fade-in">
+            <div class="glass-panel w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+                <div class="bg-slate-900 p-6 text-center border-b border-slate-700">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Logo" class="h-16 mx-auto mb-3 filter invert">
+                    <h1 class="text-xl font-bold text-white uppercase tracking-wider">E CREW Type Rating<br>Exam System</h1>
+                    <h2 class="text-sm text-blue-400 mt-1">Aircraft Type Rating Examination Platform</h2>
+                    <h3 class="text-xs text-slate-400 mt-1">Transwisata Prima Aviation</h3>
+                </div>
+                <div class="p-8">
+                    <form id="form-login" onsubmit="handleLogin(event)">
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-user"></i></span>
+                                <input type="text" id="login-username" required class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Masukkan username">
+                            </div>
                         </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Modal Assign Exam */}
-          {assignModal.show && (
-            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 animate-fade-in-up">
-                <h3 className="font-bold text-lg text-slate-800 mb-2">Penugasan Ujian</h3>
-                <p className="text-sm text-slate-600 mb-4">Tentukan jenis ujian untuk <b>{assignModal.user?.name}</b> ({assignModal.user?.typeRating})</p>
-                
-                <div className="space-y-4 mb-6">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Type Exam</label>
-                    <input list="examTypesList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
-                      value={assignModal.typeExam} onChange={e => setAssignModal({...assignModal, typeExam: e.target.value})} placeholder="Pilih/Ketik manual..." />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Model Soal</label>
-                    <input list="modelSoalsList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
-                      value={assignModal.modelSoal} onChange={e => setAssignModal({...assignModal, modelSoal: e.target.value})} placeholder="Pilih/Ketik manual..." />
-                  </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-lock"></i></span>
+                                <input type="password" id="login-password" required class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Masukkan password">
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
+                            Login <i class="fas fa-sign-in-alt ml-2"></i>
+                        </button>
+                    </form>
+                    <div class="mt-6 text-center border-t border-gray-200 pt-4">
+                        <p class="text-sm text-gray-600">Crew Member belum terdaftar?</p>
+                        <button onclick="switchView('register')" class="text-blue-600 font-medium hover:underline mt-1">Daftar Akun Baru</button>
+                    </div>
                 </div>
-
-                <div className="flex gap-3 justify-end">
-                  <button onClick={() => setAssignModal({ show: false, user: null, typeExam: 'Initial', modelSoal: 'MODEL A' })} className="px-4 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100">Batal</button>
-                  <button onClick={submitAssign} className="px-4 py-2 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-md flex items-center gap-2">
-                    <Icon name="paper-plane" size={14}/> Tugaskan
-                  </button>
-                </div>
-              </div>
             </div>
-          )}
-
-          {/* Modal Edit User */}
-          {editUserModal.show && (
-            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 animate-fade-in-up">
-                <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
-                  <h3 className="font-bold text-lg text-slate-800">Edit Data User</h3>
-                  <button type="button" onClick={() => setEditUserModal({ show: false, data: null })} className="text-slate-400 hover:text-red-500 transition-colors">
-                    <Icon name="xmark" size={20} />
-                  </button>
-                </div>
-                
-                <form onSubmit={submitUpdateUser} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="col-span-1 md:col-span-2">
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Lengkap</label>
-                      <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                        value={editUserModal.data?.name || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, name: e.target.value } })} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Username</label>
-                      <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                        value={editUserModal.data?.username || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, username: e.target.value } })} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Password</label>
-                      <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                        value={editUserModal.data?.password || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, password: e.target.value } })} />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Rank</label>
-                      <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                        value={editUserModal.data?.rank || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, rank: e.target.value } })}>
-                        {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Type Rating</label>
-                      <select className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                        value={editUserModal.data?.typeRating || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, typeRating: e.target.value } })}>
-                        {TYPE_RATINGS.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-                    <div className="col-span-1 md:col-span-2">
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">No. Licence</label>
-                      <input type="text" required className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
-                        value={editUserModal.data?.licenceNo || ''} onChange={(e) => setEditUserModal({ ...editUserModal, data: { ...editUserModal.data, licenceNo: e.target.value } })} />
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
-                    <button type="button" onClick={() => setEditUserModal({ show: false, data: null })} className="px-4 py-2 rounded-lg font-bold text-slate-600 hover:bg-slate-100 transition-colors">Batal</button>
-                    <button type="submit" className="px-5 py-2 rounded-lg font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-md flex items-center gap-2 transition-colors">
-                      <Icon name="check" size={14}/> Simpan Perubahan
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
         </div>
-      );
-    }
 
-    function AdminQuestions({ questions, showToast, fetchSheetData, refreshData }) {
-      const [showForm, setShowForm] = useState(false);
-      const [showImport, setShowImport] = useState(false);
-      const [isSaving, setIsSaving] = useState(false);
-      const [isImporting, setIsImporting] = useState(false);
-      const [importText, setImportText] = useState('');
-      const [importTypeRating, setImportTypeRating] = useState(TYPE_RATINGS[0]);
-      const [importExamType, setImportExamType] = useState('Initial');
-      const [importModelSoal, setImportModelSoal] = useState('MODEL A');
-      const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
-      const [formData, setFormData] = useState({ typeRating: TYPE_RATINGS[0], typeExam: 'Initial', modelSoal: 'MODEL A', text: '', optA: '', optB: '', optC: '', optD: '', correctAnswer: 'A' });
-
-      // State untuk grup & edit
-      const [expandedGroup, setExpandedGroup] = useState(null);
-      const [editingQId, setEditingQId] = useState(null);
-      const [editFormData, setEditFormData] = useState(null);
-
-      const handleSubmit = async (e) => {
-        e.preventDefault();
-        setIsSaving(true);
-        try {
-          await fetchSheetData('addQuestion', { ...formData, createdAt: new Date().toISOString() });
-          showToast('Soal berhasil ditambahkan', 'success');
-          setFormData({ ...formData, text: '', optA: '', optB: '', optC: '', optD: '', correctAnswer: 'A' });
-          setShowForm(false);
-          refreshData();
-        } catch (err) {
-          showToast('Gagal menambah soal', 'error');
-        } finally {
-          setIsSaving(false);
-        }
-      };
-
-      const handleDelete = async (id) => {
-        if (!window.confirm("Yakin ingin menghapus soal ini?")) return;
-        try {
-          await fetchSheetData('deleteQuestion', { id });
-          showToast('Soal dihapus', 'success');
-          refreshData();
-        } catch (err) { showToast('Gagal menghapus soal', 'error'); }
-      };
-
-      const handleDeleteAll = async () => {
-        if (!window.confirm("PERINGATAN: Anda yakin ingin menghapus SEMUA soal di database? Tindakan ini tidak dapat dibatalkan!")) return;
-        try {
-          await fetchSheetData('deleteAllQuestions');
-          showToast('Seluruh database soal berhasil dihapus', 'success');
-          refreshData();
-        } catch (err) { showToast('Gagal menghapus seluruh soal', 'error'); }
-      };
-
-      const handleDeleteGroup = async (group) => {
-        if (!window.confirm(`Yakin ingin menghapus seluruh ${group.questions.length} soal pada grup ${group.title}?`)) return;
-        try {
-          await fetchSheetData('deleteQuestionGroup', {
-            typeRating: group.typeRating,
-            typeExam: group.typeExam,
-            modelSoal: group.modelSoal
-          });
-          showToast(`Grup soal ${group.title} berhasil dihapus`, 'success');
-          setExpandedGroup(null);
-          refreshData();
-        } catch (err) { showToast('Gagal menghapus grup soal', 'error'); }
-      };
-
-      const handleEditClick = (q) => {
-        setEditingQId(q.id);
-        setEditFormData({ ...q });
-      };
-
-      const handleUpdateSubmit = async (e) => {
-        e.preventDefault();
-        try {
-          await fetchSheetData('updateQuestion', editFormData);
-          showToast('Soal berhasil diperbarui', 'success');
-          setEditingQId(null);
-          refreshData();
-        } catch (err) {
-          showToast('Gagal memperbarui soal', 'error');
-        }
-      };
-
-      const handleImport = async () => {
-        const lines = importText.split('\n').map(l => l.trim()).filter(l => l !== '');
-        if (lines.length === 0) return;
-
-        setIsImporting(true);
-        
-        let successCount = 0;
-        let errorCount = 0;
-        let currentSection = 'General';
-        let currentQ = {};
-        let payloadBatch = [];
-
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-          // Deteksi "1. Pertanyaan" (angka titik/kurung di awal akan dibuang)
-          const qMatch = line.match(/^\d+[\.\)]\s*(.*)/); 
-          // Deteksi "A. Opsi"
-          const optMatch = line.match(/^([A-D])[\.\)]\s*(.*)/i);
-          // Deteksi "Correct answer : C" atau "Jawaban : C"
-          const ansMatch = line.match(/^(?:Correct\s+answer|Jawaban(?:\s+Benar)?|Kunci(?:\s+Jawaban)?)\s*[:\.]\s*([A-D])/i);
-
-          if (ansMatch) {
-            currentQ.correctAnswer = ansMatch[1].toUpperCase();
-            if (currentQ.text && (currentQ.optA || currentQ.optB)) {
-              payloadBatch.push({
-                typeRating: importTypeRating,
-                typeExam: importExamType,
-                modelSoal: importModelSoal,
-                section: currentSection,
-                text: currentQ.text,
-                optA: currentQ.optA || '',
-                optB: currentQ.optB || '',
-                optC: currentQ.optC || '',
-                optD: currentQ.optD || '',
-                correctAnswer: currentQ.correctAnswer,
-                createdAt: new Date().toISOString()
-              });
-            } else {
-              errorCount++;
-            }
-            currentQ = {}; 
-          } else if (optMatch && currentQ.text) {
-            const optLetter = optMatch[1].toUpperCase();
-            currentQ[`opt${optLetter}`] = optMatch[2];
-          } else if (qMatch) {
-            currentQ.text = qMatch[1];
-          } else {
-            if (Object.keys(currentQ).length === 0) {
-              currentSection = line;
-            } else if (currentQ.text && !currentQ.optA) {
-              currentQ.text += '\n' + line;
-            }
-          }
-        }
-
-        if (payloadBatch.length === 0) {
-          setIsImporting(false);
-          showToast('Format soal tidak dikenali, gagal import.', 'error');
-          return;
-        }
-
-        setImportProgress({ current: 0, total: payloadBatch.length });
-        
-        for (let i = 0; i < payloadBatch.length; i++) {
-          try {
-            await fetchSheetData('addQuestion', payloadBatch[i]);
-            successCount++;
-          } catch(e) {
-            errorCount++;
-          }
-          setImportProgress({ current: i + 1, total: payloadBatch.length });
-        }
-
-        setIsImporting(false);
-        showToast(`Import selesai: ${successCount} berhasil, ${errorCount} gagal.`, successCount > 0 ? 'success' : 'error');
-        if (successCount > 0) {
-          setImportText('');
-          setShowImport(false);
-          refreshData();
-        }
-      };
-
-      return (
-        <div className="space-y-6">
-          {/* Data List untuk Combobox (Dropdown + Manual Input) */}
-          <datalist id="examTypesList">
-            <option value="Initial" />
-            <option value="Recurrent" />
-            <option value="Upgrade Training" />
-          </datalist>
-          <datalist id="modelSoalsList">
-            <option value="MODEL A" />
-            <option value="MODEL B" />
-            <option value="MODEL C" />
-            <option value="MODEL D" />
-          </datalist>
-
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-800">Question Bank</h2>
-              <p className="text-slate-500 text-sm mt-1">Kelola soal di Google Sheets.</p>
+        <!-- ==================== REGISTER VIEW ==================== -->
+        <div id="view-register" class="bg-aviation h-full w-full flex items-center justify-center p-4 hidden fade-in overflow-y-auto">
+            <div class="glass-panel w-full max-w-lg rounded-2xl shadow-2xl my-8">
+                <div class="bg-slate-900 p-5 text-center border-b border-slate-700 rounded-t-2xl">
+                    <h1 class="text-xl font-bold text-white">Crew Registration</h1>
+                    <h3 class="text-xs text-blue-400 mt-1">Transwisata Prima Aviation</h3>
+                </div>
+                <div class="p-6">
+                    <form id="form-register" onsubmit="handleRegister(event)">
+                        <div class="flex flex-col gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                                <input type="text" id="reg-name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                <input type="text" id="reg-username" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                <input type="password" id="reg-password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Type Rating</label>
+                                <select id="reg-rating" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none bg-white">
+                                    <option value="" disabled selected>Pilih Rating</option>
+                                    <option value="GIV">GIV</option>
+                                    <option value="BE300">BE300</option>
+                                    <option value="CA212">CA212</option>
+                                    <option value="B412">B412</option>
+                                    <option value="AW109">AW109</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Rank</label>
+                                <select id="reg-rank" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none bg-white">
+                                    <option value="" disabled selected>Pilih Rank</option>
+                                    <option value="CCP">CCP</option>
+                                    <option value="FI">FI</option>
+                                    <option value="GI">GI</option>
+                                    <option value="Capt">Capt</option>
+                                    <option value="FO">FO</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">No. Licence</label>
+                                <input type="text" id="reg-licence" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
+                            </div>
+                        </div>
+                        <div class="mt-6 flex gap-3">
+                            <button type="button" onclick="switchView('login')" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition">Kembali</button>
+                            <button type="submit" class="w-2/3 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">Daftar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <button onClick={() => { setShowImport(!showImport); setShowForm(false); }} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 ${showImport ? 'bg-slate-200 text-slate-800' : 'bg-green-600 text-white hover:bg-green-700'}`}>
-                <Icon name="file-import" size={16}/> Import
-              </button>
-              <button onClick={() => { setShowForm(!showForm); setShowImport(false); }} className={`flex-1 sm:flex-none px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 ${showForm ? 'bg-slate-200 text-slate-800' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
-                <Icon name="plus" size={16}/> Tambah Soal
-              </button>
-            </div>
-          </div>
+        </div>
 
-          {showImport && (
-            <div className="bg-white rounded-xl shadow-md border-l-4 border-l-green-500 p-6 animate-fade-in-up">
-              <h3 className="font-bold text-lg mb-4 text-slate-800">Import Soal Otomatis</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Type Rating</label>
-                  <select className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white"
-                    value={importTypeRating} onChange={e => setImportTypeRating(e.target.value)}>
-                    {TYPE_RATINGS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Type Exam</label>
-                  <input list="examTypesList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white"
-                    value={importExamType} onChange={e => setImportExamType(e.target.value)} placeholder="Pilih/Ketik manual..." />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Model Soal</label>
-                  <input list="modelSoalsList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-white"
-                    value={importModelSoal} onChange={e => setImportModelSoal(e.target.value)} placeholder="Pilih/Ketik manual..." />
-                </div>
-              </div>
-
-              <div className="bg-slate-100 p-3 rounded-lg mb-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap">
-                <b>Contoh Format:</b><br/>
-                AIRCRAFT GENERAL<br/>
-                1. The main rotor system of the Bell 412EP is:<br/>
-                A. Two-blade semi-rigid<br/>
-                B. Three-blade rigid<br/>
-                C. Four-blade composite soft-in-plane<br/>
-                D. Five-blade rigid<br/>
-                Correct answer : C
-              </div>
-              <textarea
-                rows="8" disabled={isImporting}
-                className="w-full px-4 py-3 rounded-lg border border-slate-300 bg-slate-50 font-mono text-sm focus:ring-2 focus:ring-green-500 outline-none"
-                placeholder="AIRCRAFT GENERAL&#10;1. Pertanyaan pertama?&#10;A. Pilihan 1&#10;B. Pilihan 2&#10;Correct answer : A"
-                value={importText}
-                onChange={(e) => setImportText(e.target.value)}
-              ></textarea>
-              
-              {importProgress.total > 0 && (
-                <div className="mt-4">
-                  <div className="flex justify-between text-xs font-bold mb-1 text-slate-700">
-                    <span>Progres Import</span>
-                    <span>{importProgress.current} / {importProgress.total}</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2.5">
-                    <div className="bg-green-600 h-2.5 rounded-full transition-all duration-300" style={{width: `${(importProgress.current / importProgress.total) * 100}%`}}></div>
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-4 flex justify-end gap-3">
-                <button disabled={isImporting} onClick={() => setShowImport(false)} type="button" className="bg-white text-slate-700 font-bold py-2 px-4 rounded-lg border border-slate-300 hover:bg-slate-50 transition-colors">
-                  Batal
-                </button>
-                <button disabled={isImporting || !importText.trim()} onClick={handleImport} className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 disabled:opacity-50 flex gap-2 items-center shadow-md">
-                  {isImporting ? 'Memproses...' : <><Icon name="database" size={16}/> Mulai Import</>}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {showForm && (
-            <div className="bg-white rounded-xl shadow-md border-l-4 border-l-blue-500 p-6 animate-fade-in-up">
-              <h3 className="font-bold text-lg mb-4 text-slate-800">Buat Soal Baru</h3>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Type Rating</label>
-                    <select className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
-                      value={formData.typeRating} onChange={e => setFormData({...formData, typeRating: e.target.value})}>
-                      {TYPE_RATINGS.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Type Exam</label>
-                    <input list="examTypesList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
-                      value={formData.typeExam} onChange={e => setFormData({...formData, typeExam: e.target.value})} placeholder="Pilih/Ketik manual..." />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Model Soal</label>
-                    <input list="modelSoalsList" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
-                      value={formData.modelSoal} onChange={e => setFormData({...formData, modelSoal: e.target.value})} placeholder="Pilih/Ketik manual..." />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Pertanyaan</label>
-                  <textarea required rows="3" className="w-full px-4 py-2 rounded-lg border border-slate-300 bg-slate-50"
-                    value={formData.text} onChange={e => setFormData({...formData, text: e.target.value})} />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {['A', 'B', 'C', 'D'].map((opt) => (
-                    <div key={opt}>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">Opsi {opt}</label>
-                      <input type="text" required className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-slate-50"
-                        value={formData[`opt${opt}`]} onChange={e => setFormData({...formData, [`opt${opt}`]: e.target.value})} />
+        <!-- ==================== DASHBOARD LAYOUT (ADMIN & USER) ==================== -->
+        <div id="view-dashboard" class="flex flex-col h-screen w-full hidden bg-gray-100 fade-in">
+            
+            <!-- TOP NAVIGATION HEADER & TABS -->
+            <header class="bg-slate-900 text-white shadow-md z-20 flex-shrink-0">
+                <div class="flex items-center justify-between px-6 py-3 border-b border-slate-800">
+                    <div class="flex items-center gap-3">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Logo" class="h-10 filter invert hidden sm:block">
+                        <div>
+                            <h1 class="font-bold text-sm sm:text-lg tracking-wide leading-tight">E CREW Type Rating Exam System</h1>
+                            <div class="text-xs text-slate-400">Transwisata Prima Aviation</div>
+                        </div>
+                        <span id="user-role-badge" class="text-xs bg-blue-600 px-2 py-1 rounded font-semibold ml-2 self-start mt-1 sm:mt-0 sm:self-auto">ADMIN</span>
                     </div>
-                  ))}
+                    
+                    <div class="flex items-center gap-5">
+                        <div class="text-right hidden md:block">
+                            <p class="text-xs text-slate-400">Selamat datang,</p>
+                            <p id="nav-user-name" class="font-semibold text-sm">Admin Name</p>
+                        </div>
+                        <button onclick="logout()" class="flex items-center text-slate-300 hover:text-white bg-slate-800 hover:bg-red-600 border border-slate-700 hover:border-transparent rounded px-4 py-2 transition-colors text-sm">
+                            <i class="fas fa-sign-out-alt md:mr-2"></i> <span class="hidden md:inline">Logout</span>
+                        </button>
+                    </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Jawaban Benar</label>
-                  <div className="flex gap-4">
-                    {['A', 'B', 'C', 'D'].map((opt) => (
-                      <label key={opt} className="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="correctAnswer" value={opt} checked={formData.correctAnswer === opt}
-                          onChange={e => setFormData({...formData, correctAnswer: e.target.value})} className="w-4 h-4 text-blue-600" />
-                        <span className="font-bold text-slate-700">{opt}</span>
-                      </label>
-                    ))}
-                  </div>
+
+                <!-- Bottom Bar: Menu Tabs -->
+                <nav class="flex overflow-x-auto no-scrollbar px-2" id="sidebar-nav"></nav>
+            </header>
+
+            <!-- MAIN CONTENT AREA -->
+            <main class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+                <div class="bg-white shadow-sm h-14 flex items-center justify-between px-6 z-10 flex-shrink-0">
+                    <h2 id="page-title" class="text-xl font-bold text-gray-800">Dashboard</h2>
                 </div>
-                <div className="pt-4 flex justify-end">
-                  <button disabled={isSaving} type="submit" className="bg-slate-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-slate-800 disabled:opacity-50 flex gap-2 items-center">
-                    {isSaving ? 'Menyimpan...' : <><Icon name="database" size={16}/> Simpan Soal</>}
-                  </button>
+                <div class="flex-1 overflow-y-auto p-6" id="main-content-area"></div>
+            </main>
+        </div>
+
+        <!-- MODAL EDIT USER -->
+        <div id="modal-edit-user" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-user-edit text-blue-600 mr-2"></i>Edit Data Crew</h3>
+                    <button onclick="closeModal('modal-edit-user')" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
                 </div>
-              </form>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            {questions.length > 0 && (
-              <div className="flex justify-end mb-2 animate-fade-in-up">
-                <button onClick={handleDeleteAll} className="text-xs font-bold bg-red-100 text-red-600 hover:bg-red-200 px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-sm border border-red-200">
-                  <Icon name="trash-can" size={14}/> Hapus Seluruh Database Soal
-                </button>
-              </div>
-            )}
-            {(() => {
-              // 1. Mengelompokkan Soal
-              const groupedQuestions = {};
-              questions.forEach(q => {
-                const tr = q.typeRating || 'Unknown';
-                const te = q.typeExam || 'Initial';
-                const ms = q.modelSoal || 'MODEL A';
-                const key = `${tr}|${te}|${ms}`;
-                
-                if (!groupedQuestions[key]) {
-                  groupedQuestions[key] = {
-                    title: `${te} ${tr} - ${ms}`,
-                    typeRating: tr,
-                    typeExam: te,
-                    modelSoal: ms,
-                    questions: []
-                  };
-                }
-                groupedQuestions[key].questions.push(q);
-              });
-
-              const groupedKeys = Object.keys(groupedQuestions);
-
-              if (groupedKeys.length === 0) {
-                return (
-                  <div className="text-center p-8 bg-white rounded-xl shadow-sm border border-slate-200 text-slate-500">
-                    Belum ada soal tersimpan di Question Bank.
-                  </div>
-                );
-              }
-
-              // 2. Menampilkan List Grup
-              return groupedKeys.map(key => {
-                const group = groupedQuestions[key];
-                const isExpanded = expandedGroup === key;
-
-                return (
-                  <div key={key} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    {/* Header Grup (Dapat di-klik) */}
-                    <div 
-                      className="bg-slate-50 hover:bg-slate-100 px-6 py-4 cursor-pointer flex justify-between items-center transition-colors border-b border-transparent"
-                      onClick={() => setExpandedGroup(isExpanded ? null : key)}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-90 text-blue-600' : 'text-slate-400'}`}>
-                          <Icon name="chevron-right" />
+                <form id="form-edit-user" onsubmit="saveEditUser(event)" class="p-6">
+                    <input type="hidden" id="edit-u-idx">
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                            <input type="text" id="edit-u-name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                <input type="text" id="edit-u-username" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                <input type="text" id="edit-u-password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Type Rating</label>
+                                <select id="edit-u-rating" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none bg-white">
+                                    <option value="GIV">GIV</option><option value="BE300">BE300</option>
+                                    <option value="CA212">CA212</option><option value="B412">B412</option><option value="AW109">AW109</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Rank</label>
+                                <select id="edit-u-rank" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none bg-white">
+                                    <option value="CCP">CCP</option><option value="FI">FI</option>
+                                    <option value="GI">GI</option><option value="Capt">Capt</option><option value="FO">FO</option>
+                                </select>
+                            </div>
                         </div>
                         <div>
-                          <h4 className="font-bold text-slate-800 text-lg uppercase tracking-wide">
-                            {group.title}
-                          </h4>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">No. Licence</label>
+                            <input type="text" id="edit-u-licence" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
                         </div>
-                      </div>
-                      <span className="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1 rounded-full shadow-sm">
-                        {group.questions.length} Soal
-                      </span>
                     </div>
-
-                    {/* Konten Soal (Expanded) */}
-                    {isExpanded && (
-                      <div className="divide-y divide-slate-100 border-t border-slate-200 bg-white">
-                        <div className="bg-red-50/50 px-6 py-3 flex justify-between items-center border-b border-red-100">
-                          <span className="text-xs text-slate-500 font-semibold">Kelola Grup ini:</span>
-                          <button onClick={() => handleDeleteGroup(group)} className="text-xs font-bold bg-red-500 text-white hover:bg-red-600 px-3 py-1.5 rounded shadow-sm transition-colors flex items-center gap-1">
-                            <Icon name="trash-can" size={12}/> Hapus Semua Soal di Grup Ini ({group.questions.length})
-                          </button>
-                        </div>
-                        {group.questions.map((q, idx) => (
-                          <div key={q.id || idx} className="p-6 hover:bg-slate-50 transition-colors">
-                            
-                            {editingQId === q.id ? (
-                              /* --- FORM EDIT SOAL --- */
-                              <form onSubmit={handleUpdateSubmit} className="bg-white p-5 rounded-lg border border-blue-300 shadow-md space-y-4 animate-fade-in-up">
-                                <div className="flex justify-between items-center mb-2 border-b border-slate-100 pb-2">
-                                  <h4 className="font-bold text-blue-700 flex items-center gap-2">
-                                    <Icon name="pen-to-square" size={16}/> Edit Soal #{idx + 1}
-                                  </h4>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="col-span-full">
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">Section (Opsional, cth: AIRCRAFT GENERAL)</label>
-                                    <input type="text" className="w-full px-3 py-2 rounded-md border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none"
-                                      value={editFormData.section || ''} onChange={e => setEditFormData({...editFormData, section: e.target.value})} />
-                                  </div>
-                                  <div className="col-span-full">
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">Pertanyaan</label>
-                                    <textarea rows="3" required className="w-full px-3 py-2 rounded-md border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none"
-                                      value={editFormData.text} onChange={e => setEditFormData({...editFormData, text: e.target.value})} />
-                                  </div>
-                                  {['A', 'B', 'C', 'D'].map((opt) => (
-                                    <div key={opt}>
-                                      <label className="block text-xs font-bold text-slate-700 mb-1">Opsi {opt}</label>
-                                      <input type="text" required className="w-full px-3 py-2 rounded-md border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none"
-                                        value={editFormData[`opt${opt}`]} onChange={e => setEditFormData({...editFormData, [`opt${opt}`]: e.target.value})} />
-                                    </div>
-                                  ))}
-                                  <div className="col-span-full">
-                                    <label className="block text-xs font-bold text-slate-700 mb-1">Jawaban Benar</label>
-                                    <div className="flex gap-4">
-                                      {['A', 'B', 'C', 'D'].map((opt) => (
-                                        <label key={`editAns-${opt}`} className="flex items-center gap-2 cursor-pointer">
-                                          <input type="radio" name={`editAns-${q.id}`} value={opt} checked={editFormData.correctAnswer?.trim().toUpperCase() === opt}
-                                            onChange={e => setEditFormData({...editFormData, correctAnswer: e.target.value})} className="w-4 h-4 text-blue-600" />
-                                          <span className="font-bold text-slate-700">{opt}</span>
-                                        </label>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                                  <button type="button" onClick={() => setEditingQId(null)} className="px-4 py-2 text-sm font-bold text-slate-600 border border-slate-300 bg-white hover:bg-slate-50 rounded-lg transition-colors">Batal</button>
-                                  <button type="submit" className="px-5 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm flex items-center gap-2">
-                                    <Icon name="check" size={14}/> Simpan Perubahan
-                                  </button>
-                                </div>
-                              </form>
-                            ) : (
-                              /* --- MODE VIEW SOAL --- */
-                              <div className="flex gap-4">
-                                <div className="font-bold text-slate-400 mt-1">{idx + 1}.</div>
-                                <div className="flex-1">
-                                  {q.section && q.section !== 'General' && (
-                                    <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded uppercase tracking-wider inline-block mb-3 shadow-sm border border-blue-200">
-                                      {q.section}
-                                    </span>
-                                  )}
-                                  <p className="font-semibold text-slate-800 mb-4 whitespace-pre-wrap">{q.text}</p>
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm text-slate-600">
-                                    <div className={`p-3 rounded-lg border-2 ${q.correctAnswer?.trim().toUpperCase() === 'A' ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-slate-100 bg-white'}`}>A. {q.optA}</div>
-                                    <div className={`p-3 rounded-lg border-2 ${q.correctAnswer?.trim().toUpperCase() === 'B' ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-slate-100 bg-white'}`}>B. {q.optB}</div>
-                                    <div className={`p-3 rounded-lg border-2 ${q.correctAnswer?.trim().toUpperCase() === 'C' ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-slate-100 bg-white'}`}>C. {q.optC}</div>
-                                    <div className={`p-3 rounded-lg border-2 ${q.correctAnswer?.trim().toUpperCase() === 'D' ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-slate-100 bg-white'}`}>D. {q.optD}</div>
-                                  </div>
-                                </div>
-                                <div className="flex flex-col gap-2 shrink-0 border-l border-slate-100 pl-4 ml-2">
-                                  <button onClick={(e) => { e.stopPropagation(); handleEditClick(q); }} className="text-blue-500 hover:bg-blue-100 hover:text-blue-700 p-2.5 rounded-lg transition-colors flex items-center justify-center bg-blue-50" title="Edit Soal">
-                                    <Icon name="pen-to-square" size={16} />
-                                  </button>
-                                  <button onClick={(e) => { e.stopPropagation(); handleDelete(q.id); }} className="text-red-500 hover:bg-red-100 hover:text-red-700 p-2.5 rounded-lg transition-colors flex items-center justify-center bg-red-50" title="Hapus Soal">
-                                    <Icon name="trash-can" size={16} />
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              });
-            })()}
-          </div>
-        </div>
-      );
-    }
-
-    function AdminResults({ assignments }) {
-      const completed = assignments.filter(a => a.status === 'completed').sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
-      return (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-          <div className="p-6 border-b border-slate-200">
-            <h2 className="text-xl font-bold text-slate-800">Hasil Ujian</h2>
-            <p className="text-slate-500 text-sm mt-1">Rekam jejak nilai ujian kru.</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-                  <th className="p-4 font-semibold">Nama / User</th>
-                  <th className="p-4 font-semibold">Type Rating</th>
-                  <th className="p-4 font-semibold">Tanggal Selesai</th>
-                  <th className="p-4 font-semibold text-right">Nilai</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {completed.length === 0 ? (
-                  <tr><td colSpan="4" className="p-8 text-center text-slate-500">Belum ada ujian yang diselesaikan.</td></tr>
-                ) : (
-                  completed.map((a, i) => (
-                    <tr key={a.id || i} className="hover:bg-slate-50">
-                      <td className="p-4 font-semibold text-slate-800">{a.userName}</td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-800 mb-1">{a.typeRating}</span><br/>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase">{a.typeExam || 'Ujian'} - {a.modelSoal || 'Umum'}</span>
-                      </td>
-                      <td className="p-4 text-sm text-slate-600">{a.completedAt ? new Date(a.completedAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' }) : '-'}</td>
-                      <td className="p-4 text-right">
-                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${Number(a.score) >= 80 ? 'bg-green-100 text-green-700' : Number(a.score) >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                          {Number(a.score).toFixed(0)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      );
-    }
-
-    function UserDashboard({ appUser, assignments, setView }) {
-      const myAssignments = assignments.filter(a => a.userId === appUser.id || a.userId === appUser.username);
-      const pending = myAssignments.filter(a => a.status === 'pending');
-      const completed = myAssignments.filter(a => a.status === 'completed').sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt));
-
-      return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-fade-in-up">
-          <div className="bg-slate-900 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
-            <div className="absolute right-[-20px] top-[-20px] opacity-10">
-              <Icon name="plane-departure" size={180} />
+                    <div class="mt-6 flex justify-end gap-3 border-t pt-4">
+                        <button type="button" onclick="closeModal('modal-edit-user')" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition">Batal</button>
+                        <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">Simpan Perubahan</button>
+                    </div>
+                </form>
             </div>
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
-              <div className="w-20 h-20 bg-slate-700 rounded-full flex items-center justify-center text-3xl font-bold border-4 border-yellow-500">
-                {appUser.name.charAt(0)}
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">{appUser.name}</h2>
-                <div className="flex flex-wrap gap-3 mt-2">
-                  <span className="bg-slate-800 px-3 py-1 rounded-full text-xs font-medium border border-slate-700">Rank: <span className="text-yellow-500 font-bold">{appUser.rank}</span></span>
-                  <span className="bg-slate-800 px-3 py-1 rounded-full text-xs font-medium border border-slate-700">Licence: <span className="text-white font-bold">{appUser.licenceNo}</span></span>
-                  <span className="bg-slate-800 px-3 py-1 rounded-full text-xs font-medium border border-slate-700">Rating: <span className="text-blue-400 font-bold">{appUser.typeRating}</span></span>
+        </div>
+
+        <!-- MODAL EDIT INSTRUKTUR -->
+        <div id="modal-edit-inst" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-chalkboard-teacher text-purple-600 mr-2"></i>Edit Data Instruktur</h3>
+                    <button onclick="closeModal('modal-edit-inst')" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Icon name="file-lines" size={20} className="text-blue-600"/> Ujian Tersedia
-            </h3>
-            {pending.length === 0 ? (
-              <div className="bg-white rounded-xl p-8 text-center border border-slate-200 shadow-sm text-slate-500">
-                Tidak ada ujian yang ditugaskan saat ini.
-              </div>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {pending.map((a, i) => (
-                  <div key={a.id || i} className="bg-white rounded-xl border border-blue-200 shadow-sm p-6 hover:shadow-md transition-shadow relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h4 className="font-bold text-lg text-slate-800">Type Rating Exam</h4>
-                        <p className="text-blue-600 font-bold text-sm">{a.typeRating} - {a.typeExam} ({a.modelSoal})</p>
-                      </div>
-                      <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-bold">Baru</span>
+                <form id="form-edit-inst" onsubmit="saveEditInst(event)" class="p-6">
+                    <input type="hidden" id="edit-i-idx">
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Instruktur</label>
+                            <input type="text" id="edit-i-name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">LOA (Letter of Authorization)</label>
+                            <input type="text" id="edit-i-loa" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 outline-none">
+                        </div>
                     </div>
-                    <p className="text-sm text-slate-600 mb-6">Ujian ini telah ditugaskan kepada Anda. Siapkan diri sebelum memulai.</p>
-                    <button onClick={() => setView('exam')} className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow flex justify-center items-center gap-2">
-                      Mulai Ujian <Icon name="arrow-right" size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                    <div class="mt-6 flex justify-end gap-3 border-t pt-4">
+                        <button type="button" onclick="closeModal('modal-edit-inst')" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition">Batal</button>
+                        <button type="submit" class="px-5 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
-          <div>
-            <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Icon name="square-check" size={20} className="text-green-600"/> Riwayat Ujian
-            </h3>
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
-                    <th className="p-4 font-semibold">Tipe Ujian</th>
-                    <th className="p-4 font-semibold">Tanggal Selesai</th>
-                    <th className="p-4 font-semibold text-right">Nilai Akhir</th>
-                  </tr>
+        <!-- MODAL EDIT NEWS -->
+        <div id="modal-edit-news" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-edit text-yellow-500 mr-2"></i>Edit Berita</h3>
+                    <button onclick="closeModal('modal-edit-news')" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <form id="form-edit-news" onsubmit="saveEditNews(event)" class="p-6">
+                    <input type="hidden" id="edit-n-idx">
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Judul Berita</label>
+                            <input type="text" id="edit-n-title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Isi Berita</label>
+                            <textarea id="edit-n-content" required rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 outline-none"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-3 border-t pt-4">
+                        <button type="button" onclick="closeModal('modal-edit-news')" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition">Batal</button>
+                        <button type="submit" class="px-5 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL VIEW NEWS DETAIL -->
+        <div id="modal-view-news" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800 pr-4" id="view-n-title">Judul Berita</h3>
+                    <button onclick="closeModal('modal-view-news')" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <div class="p-6 overflow-y-auto max-h-[60vh]">
+                    <p class="text-xs text-gray-500 mb-4 border-b pb-2"><i class="far fa-calendar-alt mr-1"></i> Dipublikasikan pada: <span id="view-n-date" class="font-medium">Tanggal</span></p>
+                    <div class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed" id="view-n-content">Isi berita...</div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+                    <button onclick="closeModal('modal-view-news')" class="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">Tutup</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== TEMPLATES FOR ADMIN MODULES ==================== -->
+    <template id="tpl-admin-dashboard">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
+                <div class="flex justify-between items-center">
+                    <div><p class="text-sm text-gray-500">Total Users</p><h3 class="text-2xl font-bold text-gray-800" id="stat-users">0</h3></div>
+                    <i class="fas fa-users text-blue-200 text-3xl"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
+                <div class="flex justify-between items-center">
+                    <div><p class="text-sm text-gray-500">Total Soal</p><h3 class="text-2xl font-bold text-gray-800" id="stat-questions">0</h3></div>
+                    <i class="fas fa-question-circle text-green-200 text-3xl"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500">
+                <div class="flex justify-between items-center">
+                    <div><p class="text-sm text-gray-500">Instructors</p><h3 class="text-2xl font-bold text-gray-800" id="stat-instructors">0</h3></div>
+                    <i class="fas fa-chalkboard-teacher text-purple-200 text-3xl"></i>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500">
+                <div class="flex justify-between items-center">
+                    <div><p class="text-sm text-gray-500">Exams Result</p><h3 class="text-2xl font-bold text-gray-800" id="stat-results">0</h3></div>
+                    <i class="fas fa-file-signature text-orange-200 text-3xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h3 class="text-lg font-bold mb-4">System Overview</h3>
+            <p class="text-gray-600">Selamat datang di Panel Admin E CREW Type Rating Exam System. Gunakan menu di sebelah kiri untuk mengelola master data, menugaskan ujian, menyampaikan berita terbaru, dan melihat hasil ujian.</p>
+        </div>
+    </template>
+
+    <template id="tpl-admin-questions">
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border-t-4 border-green-500">
+            <h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-plus-circle text-green-600 mr-2"></i>Tambah Soal Baru</h3>
+            <form id="form-add-question" onsubmit="addQuestion(event)">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Type Rating</label>
+                        <select id="q-rating" required onchange="autoDetectWing()" class="w-full px-3 py-2 border rounded-lg focus:ring-green-500">
+                            <option value="" disabled selected>Pilih Rating</option>
+                            <option value="GIV">GIV</option><option value="BE300">BE300</option>
+                            <option value="CA212">CA212</option><option value="B412">B412</option><option value="AW109">AW109</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Wing Type (Otomatis)</label>
+                        <input type="text" id="q-wing" readonly class="w-full px-3 py-2 border rounded-lg bg-gray-100 font-bold text-green-700">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Type Exam</label>
+                        <select id="q-exam-type" required class="w-full px-3 py-2 border rounded-lg focus:ring-green-500" onchange="checkManualExamType()">
+                            <option value="Initial">Initial</option>
+                            <option value="Recurrent">Recurrent</option>
+                            <option value="Upgrade Training">Upgrade Training</option>
+                            <option value="Manual">-- Input Manual --</option>
+                        </select>
+                        <input type="text" id="q-exam-manual" class="w-full px-3 py-2 border rounded-lg mt-2 hidden" placeholder="Ketik jenis ujian custom...">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Teks Pertanyaan</label>
+                    <textarea id="q-text" required rows="2" class="w-full px-3 py-2 border rounded-lg focus:ring-green-500"></textarea>
+                </div>
+                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">Simpan Soal</button>
+            </form>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4 border-b bg-gray-50 font-bold text-gray-700"><i class="fas fa-database mr-2"></i>Database Bank Soal</div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                        <tr><th class="px-4 py-3">Rating</th><th class="px-4 py-3">Wing</th><th class="px-4 py-3">Type Exam</th><th class="px-4 py-3">Pertanyaan</th><th class="px-4 py-3 text-center">Aksi</th></tr>
+                    </thead>
+                    <tbody id="table-questions-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-admin-users">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 border-blue-500">
+            <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
+                <span class="font-bold text-gray-700"><i class="fas fa-users mr-2"></i>Daftar Crew Terdaftar</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                        <tr><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Username</th><th class="px-4 py-3">Rating</th><th class="px-4 py-3">Rank</th><th class="px-4 py-3">No. Licence</th><th class="px-4 py-3 text-center">Aksi</th></tr>
+                    </thead>
+                    <tbody id="table-users-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-admin-instructors">
+         <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border-t-4 border-purple-500">
+            <h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-user-plus text-purple-600 mr-2"></i>Tambah Instruktur</h3>
+            <form id="form-add-instructor" onsubmit="addInstructor(event)" class="flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-1 w-full">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Instruktur</label>
+                    <input type="text" id="inst-name" required class="w-full px-3 py-2 border rounded-lg focus:ring-purple-500">
+                </div>
+                <div class="flex-1 w-full">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">LOA (Letter of Authorization)</label>
+                    <input type="text" id="inst-loa" required class="w-full px-3 py-2 border rounded-lg focus:ring-purple-500">
+                </div>
+                <button type="submit" class="bg-purple-600 w-full md:w-auto text-white px-6 py-2 rounded shadow hover:bg-purple-700">Tambah</button>
+            </form>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+             <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                    <tr><th class="px-4 py-3">Nama Instruktur</th><th class="px-4 py-3">Nomor LOA</th><th class="px-4 py-3 w-24 text-center">Aksi</th></tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {completed.length === 0 ? (
-                    <tr><td colSpan="3" className="p-8 text-center text-slate-500">Belum ada riwayat ujian.</td></tr>
-                  ) : (
-                    completed.map((a, i) => (
-                      <tr key={a.id || i}>
-                        <td className="p-4 font-semibold text-slate-800">
-                          {a.typeRating} - {a.typeExam}
-                          <div className="text-[10px] text-slate-500 mt-0.5">{a.modelSoal}</div>
-                        </td>
-                        <td className="p-4 text-sm text-slate-600">{a.completedAt ? new Date(a.completedAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}</td>
-                        <td className="p-4 text-right">
-                          <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${Number(a.score) >= 80 ? 'bg-green-100 text-green-700' : Number(a.score) >= 60 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                            {Number(a.score).toFixed(0)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                <tbody id="table-instructors-body"></tbody>
+            </table>
         </div>
-      );
-    }
+    </template>
 
-    function ExamRunner({ appUser, assignments, questions, setView, showToast, fetchSheetData, refreshData }) {
-      const assignment = assignments.find(a => (a.userId === appUser.id || a.userId === appUser.username) && a.status === 'pending');
-      
-      // Filter soal berdasar Type Rating AND Type Exam AND Model Soal
-      const examQuestions = questions.filter(q => 
-        q.typeRating === (assignment?.typeRating || '') && 
-        (!assignment?.typeExam || q.typeExam === assignment.typeExam) && 
-        (!assignment?.modelSoal || q.modelSoal === assignment.modelSoal)
-      );
-      
-      const [answers, setAnswers] = useState({});
-      const [isSubmitting, setIsSubmitting] = useState(false);
+    <template id="tpl-admin-assign">
+        <div class="bg-white rounded-xl shadow-sm p-6 border-t-4 border-indigo-500">
+            <h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-tasks text-indigo-600 mr-2"></i>Assign Exam (Tugaskan Ujian)</h3>
+            <form onsubmit="assignExam(event)" class="max-w-2xl">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Crew (User) <span class="text-xs font-normal text-indigo-500">(Tahan Ctrl/Cmd untuk pilih lebih dari 1)</span></label>
+                    <select id="assign-user" multiple required class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 min-h-[120px]"></select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Modul Ujian (Type Rating)</label>
+                    <select id="assign-module" required class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500">
+                        <option value="GIV - Initial">GIV - Initial</option>
+                        <option value="B412 - Recurrent">B412 - Recurrent</option>
+                        <option value="CA212 - Upgrade">CA212 - Upgrade</option>
+                    </select>
+                </div>
+                 <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Instruktur Penguji</label>
+                    <select id="assign-instructor" required class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500"></select>
+                </div>
+                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded shadow hover:bg-indigo-700"><i class="fas fa-paper-plane mr-2"></i>Tugaskan Sekarang</button>
+            </form>
+        </div>
+    </template>
 
-      if (!assignment) {
-        return (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-bold text-slate-800">Ujian tidak ditemukan</h2>
-            <button onClick={() => setView('user')} className="mt-4 text-blue-600 underline">Kembali ke Dashboard</button>
-          </div>
-        );
-      }
+    <template id="tpl-admin-news">
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border-t-4 border-yellow-500">
+            <h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-bullhorn text-yellow-500 mr-2"></i>Buat Pengumuman / Berita Baru</h3>
+            <form id="form-add-news" onsubmit="addNews(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Judul Berita</label>
+                    <input type="text" id="n-title" required class="w-full px-3 py-2 border rounded-lg focus:ring-yellow-500" placeholder="Contoh: Update Regulasi Rating CA212">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Isi Berita</label>
+                    <textarea id="n-content" required rows="3" class="w-full px-3 py-2 border rounded-lg focus:ring-yellow-500" placeholder="Tuliskan detail berita disini..."></textarea>
+                </div>
+                <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded shadow hover:bg-yellow-600"><i class="fas fa-paper-plane mr-2"></i>Publikasikan</button>
+            </form>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-4 border-b bg-gray-50 font-bold text-gray-700"><i class="fas fa-history mr-2"></i>Riwayat Berita</div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                        <tr><th class="px-4 py-3 w-32">Tanggal</th><th class="px-4 py-3">Judul</th><th class="px-4 py-3">Isi Teks</th><th class="px-4 py-3 w-24 text-center">Aksi</th></tr>
+                    </thead>
+                    <tbody id="table-news-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </template>
 
-      if (examQuestions.length === 0) {
-        return (
-          <div className="text-center py-20 bg-white rounded-xl shadow p-8 max-w-2xl mx-auto border border-red-200">
-            <div className="flex justify-center mb-4"><Icon name="circle-exclamation" size={48} className="text-red-500" /></div>
-            <h2 className="text-2xl font-bold text-slate-800">Soal Belum Tersedia</h2>
-            <p className="text-slate-600 mt-2">Ujian untuk Type Rating {assignment.typeRating} belum memiliki soal di database. Silakan hubungi Administrator.</p>
-            <button onClick={() => setView('user')} className="mt-6 bg-slate-900 text-white px-6 py-2 rounded font-bold">Kembali</button>
-          </div>
-        );
-      }
-
-      const handleSubmit = async () => {
-        if (Object.keys(answers).length < examQuestions.length) {
-          if (!window.confirm('Ada soal yang belum dijawab. Yakin ingin mengumpulkan?')) return;
-        }
-
-        setIsSubmitting(true);
-        let correct = 0;
-        examQuestions.forEach(q => {
-          const questionId = q.id || q.text; 
-          if (answers[questionId] === q.correctAnswer?.trim().toUpperCase()) correct++;
-        });
+    <template id="tpl-user-dashboard">
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 bg-gradient-to-r from-blue-50 to-white">
+            <h3 class="text-xl font-bold text-gray-800">Hello, <span id="u-dash-name" class="text-blue-600">User</span>!</h3>
+            <p class="text-gray-600 mt-1">Welcome to Transwisata Prima Aviation E-Crew Exam System.</p>
+            <div class="mt-4 flex flex-wrap gap-3">
+                <span class="bg-white px-4 py-2 rounded-lg text-sm border shadow-sm font-medium"><i class="fas fa-plane text-blue-400 mr-2"></i>Rating: <span id="u-dash-rating" class="text-blue-700 font-bold"></span></span>
+                <span class="bg-white px-4 py-2 rounded-lg text-sm border shadow-sm font-medium"><i class="fas fa-medal text-yellow-500 mr-2"></i>Rank: <span id="u-dash-rank" class="text-blue-700 font-bold"></span></span>
+            </div>
+        </div>
         
-        const score = (correct / examQuestions.length) * 100;
-
-        try {
-          await fetchSheetData('submitExam', { id: assignment.id, status: 'completed', score: score.toFixed(0), completedAt: new Date().toISOString() });
-          showToast(`Ujian Selesai! Nilai Anda: ${score.toFixed(0)}`, 'success');
-          refreshData();
-          setView('user');
-        } catch (err) {
-          showToast('Gagal mengirim hasil ujian', 'error');
-        } finally {
-           setIsSubmitting(false);
-        }
-      };
-
-      return (
-        <div className="max-w-4xl mx-auto animate-fade-in-up">
-          <div className="bg-slate-900 text-white p-6 rounded-t-xl sticky top-0 z-20 shadow-md flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-              <h2 className="text-xl font-bold uppercase tracking-wide">
-                Exam: <span className="text-yellow-500">{assignment.typeRating} - {assignment.typeExam}</span> <span className="text-sm opacity-80">({assignment.modelSoal})</span>
-              </h2>
-              <p className="text-sm text-slate-300 mt-1">Kandidat: {appUser.name} | Lisensi: {appUser.licenceNo}</p>
-            </div>
-            <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700 flex items-center gap-2 font-bold text-sm">
-              <span>Progres:</span>
-              <span className="text-blue-400">{Object.keys(answers).length} / {examQuestions.length}</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-50 p-6 sm:p-8 border-x border-b border-slate-200 rounded-b-xl shadow-sm mb-10 space-y-8">
-            {(() => {
-              let currentSectionDisplay = null;
-              return examQuestions.map((q, idx) => {
-                const qId = q.id || q.text;
-                const showSection = q.section && q.section !== currentSectionDisplay;
-                if (showSection) currentSectionDisplay = q.section;
-
-                return (
-                  <React.Fragment key={qId}>
-                    {showSection && q.section !== 'General' && (
-                      <div className="col-span-full pt-4 pb-2 border-b-2 border-slate-300 mt-2">
-                        <h3 className="text-xl font-bold text-slate-800 uppercase tracking-wide">{q.section}</h3>
-                      </div>
-                    )}
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden">
-                       {answers[qId] && (
-                         <div className="absolute top-0 right-0 bg-green-500 text-white p-2 rounded-bl-lg flex items-center justify-center">
-                           <Icon name="circle-check" size={16} />
-                         </div>
-                       )}
-                      <h3 className="text-lg font-semibold text-slate-800 mb-4 flex gap-3">
-                        <span className="text-slate-400 font-bold">{idx + 1}.</span> 
-                        <span>{q.text}</span>
-                      </h3>
-                      <div className="space-y-3 pl-8">
-                        {['A', 'B', 'C', 'D'].map((opt) => (
-                          <label key={opt} className={`flex items-center gap-4 p-3 rounded-lg border-2 cursor-pointer transition-colors ${answers[qId] === opt ? 'border-blue-500 bg-blue-50/50' : 'border-slate-100 hover:border-blue-200 hover:bg-slate-50'}`}>
-                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 ${answers[qId] === opt ? 'border-blue-500' : 'border-slate-300'}`}>
-                              {answers[qId] === opt && <div className="w-3 h-3 bg-blue-500 rounded-full"></div>}
-                            </div>
-                            <span className="font-bold text-slate-600 w-6">{opt}.</span>
-                            <span className="text-slate-800">{q[`opt${opt}`]}</span>
-                            <input type="radio" name={`q-${qId}`} value={opt} className="hidden" onChange={() => setAnswers({...answers, [qId]: opt})} />
-                          </label>
-                        ))}
-                      </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-bold mb-4 border-b pb-2 flex items-center"><i class="fas fa-clipboard-list text-blue-600 mr-2"></i>Ujian Saya (Assigned Exams)</h3>
+                    <div id="user-exams-list" class="text-center py-10 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                        <i class="fas fa-check-circle text-4xl mb-3 text-gray-300"></i>
+                        <p>Belum ada ujian yang ditugaskan kepada Anda saat ini.</p>
                     </div>
-                  </React.Fragment>
-                );
-              });
-            })()}
-
-            <div className="pt-6 border-t border-slate-200 flex justify-end">
-              <button onClick={handleSubmit} disabled={isSubmitting} className="bg-green-600 text-white font-bold py-3 px-8 rounded-xl hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl disabled:opacity-50 text-lg flex items-center gap-2">
-                {isSubmitting ? 'Mengirim...' : <><Icon name="square-check" size={24}/> Selesai & Kumpulkan</>}
-              </button>
+                </div>
             </div>
-          </div>
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm p-6 border-t-4 border-yellow-400">
+                    <h3 class="text-lg font-bold mb-4 border-b pb-2 flex items-center"><i class="fas fa-newspaper text-yellow-500 mr-2"></i>Berita Terbaru</h3>
+                    <div id="user-news-feed" class="space-y-4"></div>
+                </div>
+            </div>
         </div>
-      );
-    }
+    </template>
 
-    // Render ke DOM
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+    <!-- ==================== JAVASCRIPT APPLICATION LOGIC ==================== -->
+    <script>
+        // --- GOOGLE SHEETS API URL ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbysbaLN9NLbUq_EoIKFeTH5SNsYsQj8BxFplrjsx6No0VdRuviE1Mt8dBZF-4QEKeXQUA/exec';
+
+        // --- DATA STATE ---
+        let db = { users: [], questions: [], instructors: [], assignments: [], news: [] };
+        let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+
+        // Save to LocalStorage (as backup/cache)
+        const saveDB = () => {
+            localStorage.setItem('db_users', JSON.stringify(db.users));
+            localStorage.setItem('db_questions', JSON.stringify(db.questions));
+            localStorage.setItem('db_instructors', JSON.stringify(db.instructors));
+            localStorage.setItem('db_assignments', JSON.stringify(db.assignments));
+            localStorage.setItem('db_news', JSON.stringify(db.news));
+        };
+
+        // --- PULL DATA FROM GOOGLE SHEETS ON LOAD ---
+        const fetchSheetData = async (action) => {
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=${action}`);
+                const json = await res.json();
+                return json.status === 'success' ? json.data : [];
+            } catch(e) {
+                console.error(`Error fetching ${action}:`, e);
+                return [];
+            }
+        };
+
+        const initRealDatabase = async () => {
+            try {
+                // Fetch all data in parallel
+                const [uData, qData, iData, nData, aData] = await Promise.all([
+                    fetchSheetData('getUsers'),
+                    fetchSheetData('getQuestions'),
+                    fetchSheetData('getInstructors'),
+                    fetchSheetData('getNews'),
+                    fetchSheetData('getAssignments')
+                ]);
+
+                // Map array from Google Sheets to JSON Objects
+                db.users = uData.map(r => ({ id: r[0], name: r[1], username: r[2], password: r[3], rating: r[4], rank: r[5], licence: r[6] }));
+                db.questions = qData.map(r => ({ id: r[0], rating: r[1], wing: r[2], type: r[3], text: r[4] }));
+                db.instructors = iData.map(r => ({ id: r[0], name: r[1], loa: r[2] }));
+                db.news = nData.map(r => ({ id: r[0], date: r[1], title: r[2], content: r[3] }));
+                db.assignments = aData.map(r => ({ id: r[0], userIds: r[1], examModule: r[2], instructorId: r[3], date: r[4] }));
+                
+                // Sort news latest first
+                db.news.sort((a,b) => b.id - a.id);
+                saveDB();
+            } catch (error) {
+                console.warn("Gagal terhubung ke Sheets, menggunakan cache lokal.");
+                db = {
+                    users: JSON.parse(localStorage.getItem('db_users')) || [],
+                    questions: JSON.parse(localStorage.getItem('db_questions')) || [],
+                    instructors: JSON.parse(localStorage.getItem('db_instructors')) || [],
+                    assignments: JSON.parse(localStorage.getItem('db_assignments')) || [],
+                    news: JSON.parse(localStorage.getItem('db_news')) || []
+                };
+            } finally {
+                // Hide loading screen, show login or dashboard
+                document.getElementById('loading-screen').classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 500);
+
+                if(currentUser) initDashboard();
+                else switchView('login');
+            }
+        };
+
+        // --- PUSH DATA KE GOOGLE SHEETS ---
+        const syncToGoogleSheets = (action, data) => {
+            const formData = new URLSearchParams();
+            formData.append('action', action);
+            for (const key in data) formData.append(key, data[key]);
+            
+            fetch(SCRIPT_URL, { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(result => console.log(`[Sync] ${action}: OK`))
+            .catch(error => console.error(`[Sync] ${action}: Error`, error));
+        };
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            initRealDatabase();
+        });
+
+        // --- UI UTILS ---
+        const showToast = (title, message, type = 'success') => {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-message').innerText = message;
+            
+            const icon = document.getElementById('toast-icon');
+            icon.className = type === 'success' ? 'fas fa-check-circle text-green-500 text-xl mr-3' : 'fas fa-exclamation-circle text-red-500 text-xl mr-3';
+            toast.className = `fixed top-5 right-5 z-50 transform transition-transform duration-300 bg-white shadow-xl rounded-lg border-l-4 p-4 min-w-[300px] ${type === 'success' ? 'border-green-500' : 'border-red-500'} translate-x-0`;
+            
+            setTimeout(() => { toast.classList.replace('translate-x-0', 'translate-x-full'); }, 3000);
+        };
+
+        const switchView = (viewName) => {
+            ['view-login', 'view-register', 'view-dashboard'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+        };
+
+        const closeModal = (modalId) => document.getElementById(modalId).classList.add('hidden');
+
+        // --- AUTH LOGIC ---
+        const handleLogin = (e) => {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value;
+            const p = document.getElementById('login-password').value;
+
+            if (u === 'admin' && p === 'admin123') {
+                currentUser = { role: 'admin', name: 'Administrator' };
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                initDashboard();
+            } else {
+                const user = db.users.find(x => x.username === u && x.password === p);
+                if (user) {
+                    currentUser = { ...user, role: 'user' };
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    initDashboard();
+                } else {
+                    showToast('Login Gagal', 'Username atau password salah', 'error');
+                }
+            }
+        };
+
+        const handleRegister = (e) => {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value;
+            if(username === 'admin' || db.users.some(u => u.username === username)) {
+                showToast('Error', 'Username sudah terdaftar!', 'error'); return;
+            }
+
+            const newUser = {
+                id: Date.now().toString(),
+                name: document.getElementById('reg-name').value,
+                username: username,
+                password: document.getElementById('reg-password').value,
+                rating: document.getElementById('reg-rating').value,
+                rank: document.getElementById('reg-rank').value,
+                licence: document.getElementById('reg-licence').value,
+            };
+            
+            db.users.push(newUser); saveDB();
+            syncToGoogleSheets('registerUser', newUser);
+
+            showToast('Sukses', 'Registrasi berhasil. Silakan login.');
+            document.getElementById('form-register').reset(); switchView('login');
+        };
+
+        const logout = () => {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            switchView('login');
+        };
+
+        const setActiveTabUI = (moduleId) => {
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('border-blue-500', 'text-white', 'bg-slate-800');
+                tab.classList.add('border-transparent', 'text-slate-400');
+            });
+            const activeTab = document.getElementById(`tab-${moduleId}`);
+            if(activeTab) {
+                activeTab.classList.remove('border-transparent', 'text-slate-400');
+                activeTab.classList.add('border-blue-500', 'text-white', 'bg-slate-800');
+            }
+        };
+
+        // --- DASHBOARD ROUTING ---
+        const initDashboard = () => {
+            switchView('dashboard');
+            document.getElementById('nav-user-name').innerText = currentUser.name;
+            const badge = document.getElementById('user-role-badge');
+            const navMenu = document.getElementById('sidebar-nav');
+            navMenu.innerHTML = ''; 
+
+            if (currentUser.role === 'admin') {
+                badge.innerText = 'ADMIN'; badge.className = 'text-xs bg-red-600 px-2 py-1 rounded mt-1 font-semibold ml-2';
+                const adminMenus = [
+                    { id: 'dashboard', icon: 'fa-tachometer-alt', label: 'Dashboard' },
+                    { id: 'news', icon: 'fa-newspaper', label: 'Berita / News' },
+                    { id: 'questions', icon: 'fa-question-circle', label: 'Data Soal' },
+                    { id: 'users', icon: 'fa-users', label: 'Data Crew' },
+                    { id: 'instructors', icon: 'fa-chalkboard-teacher', label: 'Data Instruktur' },
+                    { id: 'assign', icon: 'fa-tasks', label: 'Assign Exam' },
+                    { id: 'formno', icon: 'fa-file-alt', label: 'Form No.' },
+                    { id: 'results', icon: 'fa-chart-bar', label: 'Result Exam' }
+                ];
+                adminMenus.forEach(m => {
+                    navMenu.innerHTML += `<button id="tab-${m.id}" onclick="loadAdminModule('${m.id}', '${m.label}')" class="nav-tab flex-shrink-0 flex items-center px-5 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border-b-2 border-transparent focus:outline-none group"><i class="fas ${m.icon} w-5 text-center group-hover:text-blue-400 mr-2"></i> <span>${m.label}</span></button>`;
+                });
+                loadAdminModule('dashboard', 'Dashboard');
+            } else {
+                badge.innerText = 'CREW'; badge.className = 'text-xs bg-blue-600 px-2 py-1 rounded mt-1 font-semibold ml-2';
+                navMenu.innerHTML += `<button id="tab-dashboard" onclick="loadUserModule('dashboard', 'My Dashboard')" class="nav-tab flex-shrink-0 flex items-center px-5 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border-b-2 border-transparent focus:outline-none"><i class="fas fa-tachometer-alt w-5 text-center text-blue-400 mr-2"></i> <span>Dashboard</span></button>`;
+                loadUserModule('dashboard', 'My Dashboard');
+            }
+        };
+
+        const loadAdminModule = (moduleId, title) => {
+            document.getElementById('page-title').innerText = title;
+            const content = document.getElementById('main-content-area');
+            setActiveTabUI(moduleId);
+            
+            const tpl = document.getElementById(`tpl-admin-${moduleId}`);
+            if (tpl) {
+                content.innerHTML = tpl.innerHTML;
+                if(moduleId === 'dashboard') {
+                    document.getElementById('stat-users').innerText = db.users.length;
+                    document.getElementById('stat-questions').innerText = db.questions.length;
+                    document.getElementById('stat-instructors').innerText = db.instructors.length;
+                }
+                else if(moduleId === 'news') renderNewsTable();
+                else if(moduleId === 'questions') renderQuestionsTable();
+                else if(moduleId === 'users') renderUsersTable();
+                else if(moduleId === 'instructors') renderInstructorsTable();
+                else if(moduleId === 'assign') {
+                    const uSelect = document.getElementById('assign-user');
+                    uSelect.innerHTML = db.users.map(u => `<option value="${u.id}" class="p-2 border-b border-gray-100 hover:bg-indigo-50 cursor-pointer">${u.name} - ${u.rating} (${u.rank})</option>`).join('');
+                    const iSelect = document.getElementById('assign-instructor');
+                    iSelect.innerHTML = '<option value="" disabled selected>Pilih Instruktur...</option>' + db.instructors.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+                }
+            } else {
+                content.innerHTML = `<div class="bg-white p-10 rounded-xl shadow text-center text-gray-500"><i class="fas fa-tools text-5xl mb-4 text-gray-300"></i><p class="text-lg">Menu <b>${title}</b> sedang dalam tahap pengembangan.</p></div>`;
+            }
+        };
+
+        // --- DATA LOGIC: NEWS ---
+        const addNews = (e) => {
+            e.preventDefault();
+            const dateStr = new Date().toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'});
+            const data = { id: Date.now().toString(), date: dateStr, title: document.getElementById('n-title').value, content: document.getElementById('n-content').value };
+            db.news.unshift(data); saveDB(); syncToGoogleSheets('addNews', data);
+            showToast('Sukses', 'Berita berhasil dipublikasikan.'); 
+            document.getElementById('form-add-news').reset(); renderNewsTable();
+        };
+        const renderNewsTable = () => {
+            document.getElementById('table-news-body').innerHTML = db.news.length === 0 ? '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">Belum ada berita yang dipublikasikan</td></tr>' : 
+            db.news.map((n, i) => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">${n.date}</td><td class="px-4 py-3 font-bold">${n.title}</td><td class="px-4 py-3 text-gray-600 line-clamp-2">${n.content}</td><td class="px-4 py-3 text-center whitespace-nowrap"><button onclick="editNews(${i})" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full mr-1"><i class="fas fa-edit"></i></button><button onclick="delNews(${i})" class="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        };
+        const delNews = (idx) => { if(confirm('Hapus berita ini?')) { const id = db.news[idx].id; db.news.splice(idx, 1); saveDB(); syncToGoogleSheets('deleteNews', {id}); renderNewsTable(); }};
+        const editNews = (idx) => {
+            const n = db.news[idx];
+            document.getElementById('edit-n-idx').value = idx; document.getElementById('edit-n-title').value = n.title; document.getElementById('edit-n-content').value = n.content;
+            document.getElementById('modal-edit-news').classList.remove('hidden');
+        };
+        const saveEditNews = (e) => {
+            e.preventDefault();
+            const idx = document.getElementById('edit-n-idx').value;
+            db.news[idx].title = document.getElementById('edit-n-title').value; db.news[idx].content = document.getElementById('edit-n-content').value;
+            saveDB(); syncToGoogleSheets('editNews', db.news[idx]); closeModal('modal-edit-news'); showToast('Sukses', 'Berita diperbarui.'); renderNewsTable();
+        };
+
+        // --- DATA LOGIC: QUESTIONS ---
+        const autoDetectWing = () => {
+            const fw = ['GIV', 'BE300', 'CA212'], rw = ['B412', 'AW109'], r = document.getElementById('q-rating').value;
+            document.getElementById('q-wing').value = fw.includes(r) ? 'Fixed Wing' : rw.includes(r) ? 'Rotary Wing' : '';
+        };
+        const checkManualExamType = () => {
+            const sel = document.getElementById('q-exam-type'), man = document.getElementById('q-exam-manual');
+            sel.value === 'Manual' ? (man.classList.remove('hidden'), man.required = true) : (man.classList.add('hidden'), man.required = false);
+        };
+        const addQuestion = (e) => {
+            e.preventDefault();
+            const eType = document.getElementById('q-exam-type').value === 'Manual' ? document.getElementById('q-exam-manual').value : document.getElementById('q-exam-type').value;
+            const data = { id: Date.now().toString(), rating: document.getElementById('q-rating').value, wingType: document.getElementById('q-wing').value, examType: eType, questionText: document.getElementById('q-text').value };
+            db.questions.push({id: data.id, rating: data.rating, wing: data.wingType, type: data.examType, text: data.questionText});
+            saveDB(); syncToGoogleSheets('addQuestion', data);
+            showToast('Sukses', 'Soal ditambahkan.'); document.getElementById('form-add-question').reset(); document.getElementById('q-wing').value=''; document.getElementById('q-exam-manual').classList.add('hidden'); renderQuestionsTable();
+        };
+        const renderQuestionsTable = () => {
+            document.getElementById('table-questions-body').innerHTML = db.questions.length === 0 ? '<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">Data kosong</td></tr>' : 
+            db.questions.map((q, i) => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-bold">${q.rating}</td><td class="px-4 py-3">${q.wing}</td><td class="px-4 py-3"><span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">${q.type}</span></td><td class="px-4 py-3 truncate max-w-sm">${q.text}</td><td class="px-4 py-3 text-center"><button onclick="delQuestion(${i})" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        };
+        const delQuestion = (idx) => { if(confirm('Hapus soal?')) { const id=db.questions[idx].id; db.questions.splice(idx, 1); saveDB(); syncToGoogleSheets('deleteQuestion',{id}); renderQuestionsTable(); }};
+
+        // --- DATA LOGIC: USERS ---
+        const renderUsersTable = () => {
+            document.getElementById('table-users-body').innerHTML = db.users.length === 0 ? '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Tidak ada crew terdaftar</td></tr>' : 
+            db.users.map((u, i) => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium">${u.name}</td><td class="px-4 py-3">${u.username}</td><td class="px-4 py-3 font-semibold text-blue-600">${u.rating}</td><td class="px-4 py-3">${u.rank}</td><td class="px-4 py-3">${u.licence}</td><td class="px-4 py-3 text-center whitespace-nowrap"><button onclick="editUser(${i})" class="text-blue-500 bg-blue-50 p-2 rounded-full mr-1"><i class="fas fa-edit"></i></button><button onclick="delUser(${i})" class="text-red-500 bg-red-50 p-2 rounded-full"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        };
+        const delUser = (idx) => { if(confirm('Hapus user ini?')) { const id = db.users[idx].id; db.users.splice(idx, 1); saveDB(); syncToGoogleSheets('deleteUser', {id}); renderUsersTable(); }};
+        const editUser = (idx) => {
+            const u = db.users[idx]; document.getElementById('edit-u-idx').value = idx; document.getElementById('edit-u-name').value = u.name; document.getElementById('edit-u-username').value = u.username; document.getElementById('edit-u-password').value = u.password; document.getElementById('edit-u-rating').value = u.rating; document.getElementById('edit-u-rank').value = u.rank; document.getElementById('edit-u-licence').value = u.licence; document.getElementById('modal-edit-user').classList.remove('hidden');
+        };
+        const saveEditUser = (e) => {
+            e.preventDefault(); const idx = document.getElementById('edit-u-idx').value;
+            db.users[idx].name = document.getElementById('edit-u-name').value; db.users[idx].username = document.getElementById('edit-u-username').value; db.users[idx].password = document.getElementById('edit-u-password').value; db.users[idx].rating = document.getElementById('edit-u-rating').value; db.users[idx].rank = document.getElementById('edit-u-rank').value; db.users[idx].licence = document.getElementById('edit-u-licence').value;
+            saveDB(); syncToGoogleSheets('editUser', db.users[idx]); closeModal('modal-edit-user'); showToast('Sukses', 'Data Crew diperbarui.'); renderUsersTable();
+        };
+
+        // --- DATA LOGIC: INSTRUCTORS ---
+        const addInstructor = (e) => {
+            e.preventDefault(); const data = { id: Date.now().toString(), name: document.getElementById('inst-name').value, loa: document.getElementById('inst-loa').value };
+            db.instructors.push(data); saveDB(); syncToGoogleSheets('addInstructor', data); showToast('Sukses', 'Instruktur ditambahkan.'); document.getElementById('form-add-instructor').reset(); renderInstructorsTable();
+        };
+        const renderInstructorsTable = () => {
+            document.getElementById('table-instructors-body').innerHTML = db.instructors.length === 0 ? '<tr><td colspan="3" class="px-4 py-6 text-center text-gray-500">Tidak ada instruktur</td></tr>' : 
+            db.instructors.map((ins, i) => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium">${ins.name}</td><td class="px-4 py-3">${ins.loa}</td><td class="px-4 py-3 text-center whitespace-nowrap"><button onclick="editInst(${i})" class="text-blue-500 bg-blue-50 p-2 rounded-full mr-1"><i class="fas fa-edit"></i></button><button onclick="delInst(${i})" class="text-red-500 bg-red-50 p-2 rounded-full"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        };
+        const delInst = (idx) => { if(confirm('Hapus instruktur?')) { const id=db.instructors[idx].id; db.instructors.splice(idx, 1); saveDB(); syncToGoogleSheets('deleteInstructor', {id}); renderInstructorsTable(); }};
+        const editInst = (idx) => { const ins = db.instructors[idx]; document.getElementById('edit-i-idx').value = idx; document.getElementById('edit-i-name').value = ins.name; document.getElementById('edit-i-loa').value = ins.loa; document.getElementById('modal-edit-inst').classList.remove('hidden'); };
+        const saveEditInst = (e) => { e.preventDefault(); const idx = document.getElementById('edit-i-idx').value; db.instructors[idx].name = document.getElementById('edit-i-name').value; db.instructors[idx].loa = document.getElementById('edit-i-loa').value; saveDB(); syncToGoogleSheets('editInstructor', db.instructors[idx]); closeModal('modal-edit-inst'); showToast('Sukses', 'Instruktur diperbarui.'); renderInstructorsTable(); };
+
+        // --- DATA LOGIC: ASSIGN EXAM ---
+        const assignExam = (e) => {
+            e.preventDefault();
+            const selectUser = document.getElementById('assign-user'), selectedOptions = Array.from(selectUser.selectedOptions);
+            if(selectedOptions.length === 0) return showToast('Peringatan', 'Silakan pilih minimal 1 Crew!', 'error');
+            const data = { id: Date.now().toString(), userIds: selectedOptions.map(opt => opt.value).join(', '), examModule: document.getElementById('assign-module').value, instructorId: document.getElementById('assign-instructor').value, date: new Date().toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'}) };
+            db.assignments.push(data); saveDB(); syncToGoogleSheets('assignExam', data);
+            showToast('Sukses', `Ujian ditugaskan kepada ${selectedOptions.length} Crew!`); e.target.reset();
+        };
+
+        // --- USER VIEW MODULES ---
+        const loadUserModule = (moduleId, title) => {
+            document.getElementById('page-title').innerText = title;
+            document.getElementById('main-content-area').innerHTML = document.getElementById('tpl-user-dashboard').innerHTML;
+            setActiveTabUI(moduleId);
+            
+            document.getElementById('u-dash-name').innerText = currentUser.name;
+            document.getElementById('u-dash-rating').innerText = currentUser.rating;
+            document.getElementById('u-dash-rank').innerText = currentUser.rank;
+
+            const newsFeed = document.getElementById('user-news-feed');
+            newsFeed.innerHTML = db.news.length === 0 ? '<div class="text-sm text-gray-500 text-center py-4">Belum ada pengumuman.</div>' : 
+            db.news.slice(0, 5).map((n, i) => `<div onclick="viewNewsDetail(${i})" class="border-b border-gray-100 last:border-0 pb-3 last:pb-0 cursor-pointer hover:bg-yellow-50 p-2 -mx-2 rounded transition-colors"><div class="text-xs text-gray-400 mb-1"><i class="far fa-clock mr-1"></i>${n.date}</div><h4 class="font-bold text-gray-800 text-sm group-hover:text-blue-600 transition-colors">${n.title}</h4><p class="text-sm text-gray-600 mt-1 line-clamp-2">${n.content}</p></div>`).join('');
+        };
+        const viewNewsDetail = (idx) => { const n = db.news[idx]; document.getElementById('view-n-title').innerText = n.title; document.getElementById('view-n-date').innerText = n.date; document.getElementById('view-n-content').innerText = n.content; document.getElementById('modal-view-news').classList.remove('hidden'); };
+    </script>
 </body>
 </html>
