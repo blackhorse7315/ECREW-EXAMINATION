@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -13,21 +12,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; }
-        .bg-aviation {
-            background-image: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1540962351504-03099e0a754b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+        .bg-aviation { background-image: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1540962351504-03099e0a754b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80'); background-size: cover; background-position: center; background-attachment: fixed; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
         .hidden { display: none !important; }
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        /* Scrollbar styling */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -49,10 +38,7 @@
     <div id="toast" class="fixed top-5 right-5 z-50 transform transition-transform duration-300 translate-x-full bg-white shadow-xl rounded-lg border-l-4 border-blue-600 p-4 min-w-[300px]">
         <div class="flex items-center">
             <i id="toast-icon" class="fas fa-info-circle text-blue-600 text-xl mr-3"></i>
-            <div>
-                <h4 id="toast-title" class="font-bold text-gray-800">Notifikasi</h4>
-                <p id="toast-message" class="text-sm text-gray-600">Pesan ada di sini.</p>
-            </div>
+            <div><h4 id="toast-title" class="font-bold text-gray-800">Notifikasi</h4><p id="toast-message" class="text-sm text-gray-600">Pesan ada di sini.</p></div>
         </div>
     </div>
 
@@ -72,21 +58,13 @@
                     <form id="form-login" onsubmit="handleLogin(event)">
                         <div class="mb-5">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-user"></i></span>
-                                <input type="text" id="login-username" required class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Masukkan username">
-                            </div>
+                            <div class="relative"><span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-user"></i></span><input type="text" id="login-username" required class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Masukkan username"></div>
                         </div>
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-lock"></i></span>
-                                <input type="password" id="login-password" required class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="Masukkan password">
-                            </div>
+                            <div class="relative"><span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fas fa-lock"></i></span><input type="password" id="login-password" required class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Masukkan password"></div>
                         </div>
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">
-                            Login <i class="fas fa-sign-in-alt ml-2"></i>
-                        </button>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg shadow transition duration-200">Login <i class="fas fa-sign-in-alt ml-2"></i></button>
                     </form>
                     <div class="mt-6 text-center border-t border-gray-200 pt-4">
                         <p class="text-sm text-gray-600">Crew Member belum terdaftar?</p>
@@ -99,51 +77,24 @@
         <!-- ==================== REGISTER VIEW ==================== -->
         <div id="view-register" class="bg-aviation h-full w-full flex items-center justify-center p-4 hidden fade-in overflow-y-auto">
             <div class="glass-panel w-full max-w-lg rounded-2xl shadow-2xl my-8">
-                <div class="bg-slate-900 p-5 text-center border-b border-slate-700 rounded-t-2xl">
-                    <h1 class="text-xl font-bold text-white">Crew Registration</h1>
-                    <h3 class="text-xs text-blue-400 mt-1">Transwisata Prima Aviation</h3>
-                </div>
+                <div class="bg-slate-900 p-5 text-center border-b border-slate-700 rounded-t-2xl"><h1 class="text-xl font-bold text-white">Crew Registration</h1><h3 class="text-xs text-blue-400 mt-1">Transwisata Prima Aviation</h3></div>
                 <div class="p-6">
                     <form id="form-register" onsubmit="handleRegister(event)">
                         <div class="flex flex-col gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-                                <input type="text" id="reg-name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                                <input type="text" id="reg-username" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                <input type="password" id="reg-password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Type Rating</label>
-                                <select id="reg-rating" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none bg-white">
-                                    <option value="" disabled selected>Pilih Rating</option>
-                                    <option value="GIV">GIV</option>
-                                    <option value="BE300">BE300</option>
-                                    <option value="CA212">CA212</option>
-                                    <option value="B412">B412</option>
-                                    <option value="AW109">AW109</option>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label><input type="text" id="reg-name" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 outline-none"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Username</label><input type="text" id="reg-username" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 outline-none"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Password</label><input type="password" id="reg-password" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 outline-none"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Type Rating</label>
+                                <select id="reg-rating" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 bg-white">
+                                    <option value="" disabled selected>Pilih Rating</option><option value="GIV">GIV</option><option value="BE300">BE300</option><option value="CA212">CA212</option><option value="B412">B412</option><option value="AW109">AW109</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Rank</label>
-                                <select id="reg-rank" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none bg-white">
-                                    <option value="" disabled selected>Pilih Rank</option>
-                                    <option value="CCP">CCP</option>
-                                    <option value="FI">FI</option>
-                                    <option value="GI">GI</option>
-                                    <option value="Capt">Capt</option>
-                                    <option value="FO">FO</option>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Rank</label>
+                                <select id="reg-rank" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 bg-white">
+                                    <option value="" disabled selected>Pilih Rank</option><option value="CCP">CCP</option><option value="FI">FI</option><option value="GI">GI</option><option value="Capt">Capt</option><option value="FO">FO</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">No. Licence</label>
-                                <input type="text" id="reg-licence" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
-                            </div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">No. Licence</label><input type="text" id="reg-licence" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 outline-none"></div>
                         </div>
                         <div class="mt-6 flex gap-3">
                             <button type="button" onclick="switchView('login')" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition">Kembali</button>
@@ -154,386 +105,202 @@
             </div>
         </div>
 
-        <!-- ==================== DASHBOARD LAYOUT (ADMIN & USER) ==================== -->
+        <!-- ==================== DASHBOARD LAYOUT ==================== -->
         <div id="view-dashboard" class="flex flex-col h-screen w-full hidden bg-gray-100 fade-in">
-            
-            <!-- TOP NAVIGATION HEADER & TABS -->
             <header class="bg-slate-900 text-white shadow-md z-20 flex-shrink-0">
                 <div class="flex items-center justify-between px-6 py-3 border-b border-slate-800">
                     <div class="flex items-center gap-3">
                         <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Logo" class="h-10 filter invert hidden sm:block">
-                        <div>
-                            <h1 class="font-bold text-sm sm:text-lg tracking-wide leading-tight">E CREW Type Rating Exam System</h1>
-                            <div class="text-xs text-slate-400">Transwisata Prima Aviation</div>
-                        </div>
+                        <div><h1 class="font-bold text-sm sm:text-lg tracking-wide leading-tight">E CREW Type Rating Exam System</h1><div class="text-xs text-slate-400">Transwisata Prima Aviation</div></div>
                         <span id="user-role-badge" class="text-xs bg-blue-600 px-2 py-1 rounded font-semibold ml-2 self-start mt-1 sm:mt-0 sm:self-auto">ADMIN</span>
                     </div>
-                    
                     <div class="flex items-center gap-5">
-                        <div class="text-right hidden md:block">
-                            <p class="text-xs text-slate-400">Selamat datang,</p>
-                            <p id="nav-user-name" class="font-semibold text-sm">Admin Name</p>
-                        </div>
-                        <button onclick="logout()" class="flex items-center text-slate-300 hover:text-white bg-slate-800 hover:bg-red-600 border border-slate-700 hover:border-transparent rounded px-4 py-2 transition-colors text-sm">
-                            <i class="fas fa-sign-out-alt md:mr-2"></i> <span class="hidden md:inline">Logout</span>
-                        </button>
+                        <div class="text-right hidden md:block"><p class="text-xs text-slate-400">Selamat datang,</p><p id="nav-user-name" class="font-semibold text-sm">User</p></div>
+                        <button onclick="logout()" class="flex items-center text-slate-300 hover:text-white bg-slate-800 hover:bg-red-600 border border-slate-700 hover:border-transparent rounded px-4 py-2 transition-colors text-sm"><i class="fas fa-sign-out-alt md:mr-2"></i> <span class="hidden md:inline">Logout</span></button>
                     </div>
                 </div>
-
-                <!-- Bottom Bar: Menu Tabs -->
                 <nav class="flex overflow-x-auto no-scrollbar px-2" id="sidebar-nav"></nav>
             </header>
-
-            <!-- MAIN CONTENT AREA -->
             <main class="flex-1 flex flex-col overflow-hidden bg-gray-50">
-                <div class="bg-white shadow-sm h-14 flex items-center justify-between px-6 z-10 flex-shrink-0">
-                    <h2 id="page-title" class="text-xl font-bold text-gray-800">Dashboard</h2>
-                </div>
+                <div class="bg-white shadow-sm h-14 flex items-center justify-between px-6 z-10 flex-shrink-0"><h2 id="page-title" class="text-xl font-bold text-gray-800">Dashboard</h2></div>
                 <div class="flex-1 overflow-y-auto p-6" id="main-content-area"></div>
             </main>
         </div>
 
-        <!-- MODAL EDIT USER -->
+        <!-- ==================== MODALS ==================== -->
+        
+        <!-- Modal Edit User -->
         <div id="modal-edit-user" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 fade-in">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-user-edit text-blue-600 mr-2"></i>Edit Data Crew</h3>
-                    <button onclick="closeModal('modal-edit-user')" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
-                </div>
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center"><h3 class="text-lg font-bold text-gray-800"><i class="fas fa-user-edit text-blue-600 mr-2"></i>Edit Data Crew</h3><button onclick="closeModal('modal-edit-user')" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button></div>
                 <form id="form-edit-user" onsubmit="saveEditUser(event)" class="p-6">
                     <input type="hidden" id="edit-u-idx">
                     <div class="flex flex-col gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-                            <input type="text" id="edit-u-name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label><input type="text" id="edit-u-name" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500"></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Username</label><input type="text" id="edit-u-username" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Password</label><input type="text" id="edit-u-password" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500"></div>
                         </div>
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                                <input type="text" id="edit-u-username" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                                <input type="text" id="edit-u-password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
-                            </div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Type Rating</label><select id="edit-u-rating" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 bg-white"><option value="GIV">GIV</option><option value="BE300">BE300</option><option value="CA212">CA212</option><option value="B412">B412</option><option value="AW109">AW109</option></select></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Rank</label><select id="edit-u-rank" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 bg-white"><option value="CCP">CCP</option><option value="FI">FI</option><option value="GI">GI</option><option value="Capt">Capt</option><option value="FO">FO</option></select></div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Type Rating</label>
-                                <select id="edit-u-rating" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none bg-white">
-                                    <option value="GIV">GIV</option><option value="BE300">BE300</option>
-                                    <option value="CA212">CA212</option><option value="B412">B412</option><option value="AW109">AW109</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Rank</label>
-                                <select id="edit-u-rank" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none bg-white">
-                                    <option value="CCP">CCP</option><option value="FI">FI</option>
-                                    <option value="GI">GI</option><option value="Capt">Capt</option><option value="FO">FO</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">No. Licence</label>
-                            <input type="text" id="edit-u-licence" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 outline-none">
-                        </div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">No. Licence</label><input type="text" id="edit-u-licence" required class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500"></div>
                     </div>
-                    <div class="mt-6 flex justify-end gap-3 border-t pt-4">
-                        <button type="button" onclick="closeModal('modal-edit-user')" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition">Batal</button>
-                        <button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">Simpan Perubahan</button>
-                    </div>
+                    <div class="mt-6 flex justify-end gap-3 border-t pt-4"><button type="button" onclick="closeModal('modal-edit-user')" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Batal</button><button type="submit" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Simpan</button></div>
                 </form>
             </div>
         </div>
 
-        <!-- MODAL EDIT INSTRUKTUR -->
+        <!-- Modal Edit Instructor -->
         <div id="modal-edit-inst" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 fade-in">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-chalkboard-teacher text-purple-600 mr-2"></i>Edit Data Instruktur</h3>
-                    <button onclick="closeModal('modal-edit-inst')" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
-                </div>
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center"><h3 class="text-lg font-bold text-gray-800"><i class="fas fa-chalkboard-teacher text-purple-600 mr-2"></i>Edit Instruktur</h3><button onclick="closeModal('modal-edit-inst')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button></div>
                 <form id="form-edit-inst" onsubmit="saveEditInst(event)" class="p-6">
                     <input type="hidden" id="edit-i-idx">
                     <div class="flex flex-col gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Instruktur</label>
-                            <input type="text" id="edit-i-name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">LOA (Letter of Authorization)</label>
-                            <input type="text" id="edit-i-loa" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 outline-none">
-                        </div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Nama Instruktur</label><input type="text" id="edit-i-name" required class="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">LOA</label><input type="text" id="edit-i-loa" required class="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"></div>
                     </div>
-                    <div class="mt-6 flex justify-end gap-3 border-t pt-4">
-                        <button type="button" onclick="closeModal('modal-edit-inst')" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition">Batal</button>
-                        <button type="submit" class="px-5 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">Simpan Perubahan</button>
-                    </div>
+                    <div class="mt-6 flex justify-end gap-3 border-t pt-4"><button type="button" onclick="closeModal('modal-edit-inst')" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Batal</button><button type="submit" class="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Simpan</button></div>
                 </form>
             </div>
         </div>
 
-        <!-- MODAL EDIT NEWS -->
+        <!-- Modal Edit News -->
         <div id="modal-edit-news" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 fade-in">
             <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-edit text-yellow-500 mr-2"></i>Edit Berita</h3>
-                    <button onclick="closeModal('modal-edit-news')" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
-                </div>
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center"><h3 class="text-lg font-bold text-gray-800"><i class="fas fa-edit text-yellow-500 mr-2"></i>Edit Berita</h3><button onclick="closeModal('modal-edit-news')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button></div>
                 <form id="form-edit-news" onsubmit="saveEditNews(event)" class="p-6">
                     <input type="hidden" id="edit-n-idx">
                     <div class="flex flex-col gap-4">
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Judul Berita</label><input type="text" id="edit-n-title" required class="w-full px-3 py-2 border rounded-lg focus:ring-yellow-500"></div>
+                        <div><label class="block text-sm font-medium text-gray-700 mb-1">Isi Berita</label><textarea id="edit-n-content" required rows="5" class="w-full px-3 py-2 border rounded-lg focus:ring-yellow-500"></textarea></div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-3 border-t pt-4"><button type="button" onclick="closeModal('modal-edit-news')" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Batal</button><button type="submit" class="px-5 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">Simpan</button></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal View News Detail -->
+        <div id="modal-view-news" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center"><h3 class="text-lg font-bold text-gray-800 pr-4" id="view-n-title">Judul</h3><button onclick="closeModal('modal-view-news')" class="text-gray-400 hover:text-red-500"><i class="fas fa-times text-xl"></i></button></div>
+                <div class="p-6 overflow-y-auto max-h-[60vh]"><p class="text-xs text-gray-500 mb-4 border-b pb-2"><i class="far fa-calendar-alt mr-1"></i> Dipublikasikan: <span id="view-n-date" class="font-medium"></span></p><div class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed" id="view-n-content"></div></div>
+                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end"><button onclick="closeModal('modal-view-news')" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Tutup</button></div>
+            </div>
+        </div>
+
+        <!-- NEW: MODAL EDIT QUESTION -->
+        <div id="modal-edit-question" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-edit text-green-600 mr-2"></i>Edit Data Soal</h3>
+                    <button onclick="closeModal('modal-edit-question')" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
+                </div>
+                <form id="form-edit-question" onsubmit="saveEditQuestion(event)" class="p-6 overflow-y-auto max-h-[70vh]">
+                    <input type="hidden" id="edit-q-id">
+                    <div class="flex flex-col gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Judul Berita</label>
-                            <input type="text" id="edit-n-title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 outline-none">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Teks Pertanyaan</label>
+                            <textarea id="edit-q-text" required rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 outline-none"></textarea>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Isi Berita</label>
-                            <textarea id="edit-n-content" required rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-500 outline-none"></textarea>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Pilihan A</label><input type="text" id="edit-q-opt-A" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 outline-none"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Pilihan B</label><input type="text" id="edit-q-opt-B" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 outline-none"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Pilihan C</label><input type="text" id="edit-q-opt-C" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 outline-none"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Pilihan D</label><input type="text" id="edit-q-opt-D" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 outline-none"></div>
+                            <div><label class="block text-sm font-medium text-gray-700 mb-1">Pilihan E <span class="text-xs text-gray-400">(Opsional)</span></label><input type="text" id="edit-q-opt-E" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 outline-none"></div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Kunci Jawaban Benar</label>
+                                <select id="edit-q-answer" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-green-500 bg-white">
+                                    <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end gap-3 border-t pt-4">
-                        <button type="button" onclick="closeModal('modal-edit-news')" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition">Batal</button>
-                        <button type="submit" class="px-5 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition">Simpan Perubahan</button>
+                        <button type="button" onclick="closeModal('modal-edit-question')" class="px-5 py-2 bg-gray-200 text-gray-800 rounded-lg font-medium hover:bg-gray-300 transition">Batal</button>
+                        <button type="submit" class="px-5 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition">Simpan Perubahan</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- MODAL VIEW NEWS DETAIL -->
-        <div id="modal-view-news" class="fixed inset-0 bg-slate-900 bg-opacity-70 z-50 hidden flex items-center justify-center p-4 fade-in">
-            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h3 class="text-lg font-bold text-gray-800 pr-4" id="view-n-title">Judul Berita</h3>
-                    <button onclick="closeModal('modal-view-news')" class="text-gray-400 hover:text-red-500 transition-colors"><i class="fas fa-times text-xl"></i></button>
-                </div>
-                <div class="p-6 overflow-y-auto max-h-[60vh]">
-                    <p class="text-xs text-gray-500 mb-4 border-b pb-2"><i class="far fa-calendar-alt mr-1"></i> Dipublikasikan pada: <span id="view-n-date" class="font-medium">Tanggal</span></p>
-                    <div class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed" id="view-n-content">Isi berita...</div>
-                </div>
-                <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
-                    <button onclick="closeModal('modal-view-news')" class="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">Tutup</button>
-                </div>
-            </div>
-        </div>
-
-    </div>
+    </div> <!-- End of App -->
 
     <!-- ==================== TEMPLATES FOR ADMIN MODULES ==================== -->
     <template id="tpl-admin-dashboard">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
-                <div class="flex justify-between items-center">
-                    <div><p class="text-sm text-gray-500">Total Users</p><h3 class="text-2xl font-bold text-gray-800" id="stat-users">0</h3></div>
-                    <i class="fas fa-users text-blue-200 text-3xl"></i>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
-                <div class="flex justify-between items-center">
-                    <div><p class="text-sm text-gray-500">Total Soal</p><h3 class="text-2xl font-bold text-gray-800" id="stat-questions">0</h3></div>
-                    <i class="fas fa-question-circle text-green-200 text-3xl"></i>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500">
-                <div class="flex justify-between items-center">
-                    <div><p class="text-sm text-gray-500">Instructors</p><h3 class="text-2xl font-bold text-gray-800" id="stat-instructors">0</h3></div>
-                    <i class="fas fa-chalkboard-teacher text-purple-200 text-3xl"></i>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500">
-                <div class="flex justify-between items-center">
-                    <div><p class="text-sm text-gray-500">Exams Result</p><h3 class="text-2xl font-bold text-gray-800" id="stat-results">0</h3></div>
-                    <i class="fas fa-file-signature text-orange-200 text-3xl"></i>
-                </div>
-            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500"><div class="flex justify-between items-center"><div><p class="text-sm text-gray-500">Total Users</p><h3 class="text-2xl font-bold text-gray-800" id="stat-users">0</h3></div><i class="fas fa-users text-blue-200 text-3xl"></i></div></div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500"><div class="flex justify-between items-center"><div><p class="text-sm text-gray-500">Total Soal Bank</p><h3 class="text-2xl font-bold text-gray-800" id="stat-questions">0</h3></div><i class="fas fa-database text-green-200 text-3xl"></i></div></div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-indigo-500"><div class="flex justify-between items-center"><div><p class="text-sm text-gray-500">Penugasan Ujian</p><h3 class="text-2xl font-bold text-gray-800" id="stat-exams">0</h3></div><i class="fas fa-tasks text-indigo-200 text-3xl"></i></div></div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500"><div class="flex justify-between items-center"><div><p class="text-sm text-gray-500">Instructors</p><h3 class="text-2xl font-bold text-gray-800" id="stat-instructors">0</h3></div><i class="fas fa-chalkboard-teacher text-purple-200 text-3xl"></i></div></div>
         </div>
         <div class="bg-white rounded-xl shadow-sm p-6">
             <h3 class="text-lg font-bold mb-4">System Overview</h3>
-            <p class="text-gray-600">Selamat datang di Panel Admin E CREW Type Rating Exam System. Gunakan menu di sebelah kiri untuk mengelola master data, menugaskan ujian, menyampaikan berita terbaru, dan melihat hasil ujian.</p>
+            <p class="text-gray-600">Selamat datang di Panel Admin E CREW Type Rating Exam System. Gunakan menu di atas untuk mengelola master data, menugaskan ujian, menyampaikan berita terbaru, dan melihat hasil ujian.</p>
         </div>
     </template>
 
     <template id="tpl-admin-questions">
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border-t-4 border-green-500">
-            <h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-plus-circle text-green-600 mr-2"></i>Tambah Soal Baru</h3>
+            <h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-plus-circle text-green-600 mr-2"></i>Tambah Data Soal (Otomatis / Bulk)</h3>
             <form id="form-add-question" onsubmit="addQuestion(event)">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Type Rating</label>
-                        <select id="q-rating" required onchange="autoDetectWing()" class="w-full px-3 py-2 border rounded-lg focus:ring-green-500">
-                            <option value="" disabled selected>Pilih Rating</option>
-                            <option value="GIV">GIV</option><option value="BE300">BE300</option>
-                            <option value="CA212">CA212</option><option value="B412">B412</option><option value="AW109">AW109</option>
-                        </select>
+                        <select id="q-rating" required onchange="autoDetectWing()" class="w-full px-3 py-2 border rounded-lg focus:ring-green-500 bg-white"><option value="" disabled selected>Pilih Rating</option><option value="GIV">GIV</option><option value="BE300">BE300</option><option value="CA212">CA212</option><option value="B412">B412</option><option value="AW109">AW109</option></select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Wing Type (Otomatis)</label>
-                        <input type="text" id="q-wing" readonly class="w-full px-3 py-2 border rounded-lg bg-gray-100 font-bold text-green-700">
-                    </div>
+                    <div><label class="block text-sm font-medium text-gray-700 mb-1">Wing Type</label><input type="text" id="q-wing" readonly class="w-full px-3 py-2 border rounded-lg bg-gray-100 font-bold text-green-700"></div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Type Exam</label>
-                        <select id="q-exam-type" required class="w-full px-3 py-2 border rounded-lg focus:ring-green-500" onchange="checkManualExamType()">
-                            <option value="Initial">Initial</option>
-                            <option value="Recurrent">Recurrent</option>
-                            <option value="Upgrade Training">Upgrade Training</option>
-                            <option value="Manual">-- Input Manual --</option>
-                        </select>
-                        <input type="text" id="q-exam-manual" class="w-full px-3 py-2 border rounded-lg mt-2 hidden" placeholder="Ketik jenis ujian custom...">
+                        <select id="q-exam-type" required class="w-full px-3 py-2 border rounded-lg focus:ring-green-500 bg-white" onchange="checkManualExamType()"><option value="Initial">Initial</option><option value="Recurrent">Recurrent</option><option value="Upgrade Training">Upgrade Training</option><option value="Manual">-- Input Manual --</option></select>
+                        <input type="text" id="q-exam-manual" class="w-full px-3 py-2 border rounded-lg mt-2 hidden" placeholder="Ketik jenis custom...">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Model Soal</label>
+                        <select id="q-model" required class="w-full px-3 py-2 border rounded-lg focus:ring-green-500 bg-white" onchange="checkManualModel()"><option value="Model A">Model A</option><option value="Model B">Model B</option><option value="Model C">Model C</option><option value="Model D">Model D</option><option value="Manual">-- Input Manual --</option></select>
+                        <input type="text" id="q-model-manual" class="w-full px-3 py-2 border rounded-lg mt-2 hidden" placeholder="Ketik model custom...">
                     </div>
                 </div>
+                
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Teks Pertanyaan</label>
-                    <textarea id="q-text" required rows="2" class="w-full px-3 py-2 border rounded-lg focus:ring-green-500"></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex justify-between items-end">
+                        <span>Teks Pertanyaan (Copy & Paste teks bulk di sini)</span>
+                        <span class="text-xs font-normal text-gray-500"><i class="fas fa-info-circle"></i> Nomor akan terpotong otomatis</span>
+                    </label>
+                    <textarea id="q-text" required rows="6" class="w-full px-3 py-2 border rounded-lg focus:ring-green-500" placeholder="AIRCRAFT GENERAL&#10;1. The main rotor system of the Bell 412EP is:&#10;A. Two-blade semi-rigid&#10;B. Three-blade rigid&#10;C. Four-blade composite soft-in-plane&#10;D. Five-blade rigid&#10;Correct answer : C"></textarea>
                 </div>
-                <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700">Simpan Soal</button>
+                <button type="submit" class="bg-green-600 text-white px-6 py-2 rounded-lg shadow hover:bg-green-700"><i class="fas fa-magic mr-2"></i>Generate & Simpan Soal</button>
             </form>
         </div>
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div class="p-4 border-b bg-gray-50 font-bold text-gray-700"><i class="fas fa-database mr-2"></i>Database Bank Soal</div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-500">
-                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                        <tr><th class="px-4 py-3">Rating</th><th class="px-4 py-3">Wing</th><th class="px-4 py-3">Type Exam</th><th class="px-4 py-3">Pertanyaan</th><th class="px-4 py-3 text-center">Aksi</th></tr>
-                    </thead>
-                    <tbody id="table-questions-body"></tbody>
-                </table>
-            </div>
+
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden mt-6">
+            <div class="p-4 border-b bg-gray-50 flex justify-between items-center"><span class="font-bold text-gray-700"><i class="fas fa-folder-open mr-2"></i>Daftar Modul Ujian Tersimpan</span></div>
+            <div class="p-4 bg-white" id="grouped-questions-container"></div>
         </div>
     </template>
 
-    <template id="tpl-admin-users">
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 border-blue-500">
-            <div class="p-4 border-b bg-gray-50 flex justify-between items-center">
-                <span class="font-bold text-gray-700"><i class="fas fa-users mr-2"></i>Daftar Crew Terdaftar</span>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-500">
-                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                        <tr><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Username</th><th class="px-4 py-3">Rating</th><th class="px-4 py-3">Rank</th><th class="px-4 py-3">No. Licence</th><th class="px-4 py-3 text-center">Aksi</th></tr>
-                    </thead>
-                    <tbody id="table-users-body"></tbody>
-                </table>
-            </div>
-        </div>
-    </template>
-
-    <template id="tpl-admin-instructors">
-         <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border-t-4 border-purple-500">
-            <h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-user-plus text-purple-600 mr-2"></i>Tambah Instruktur</h3>
-            <form id="form-add-instructor" onsubmit="addInstructor(event)" class="flex flex-col md:flex-row gap-4 items-end">
-                <div class="flex-1 w-full">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Instruktur</label>
-                    <input type="text" id="inst-name" required class="w-full px-3 py-2 border rounded-lg focus:ring-purple-500">
-                </div>
-                <div class="flex-1 w-full">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">LOA (Letter of Authorization)</label>
-                    <input type="text" id="inst-loa" required class="w-full px-3 py-2 border rounded-lg focus:ring-purple-500">
-                </div>
-                <button type="submit" class="bg-purple-600 w-full md:w-auto text-white px-6 py-2 rounded shadow hover:bg-purple-700">Tambah</button>
-            </form>
-        </div>
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-             <table class="w-full text-sm text-left text-gray-500">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                    <tr><th class="px-4 py-3">Nama Instruktur</th><th class="px-4 py-3">Nomor LOA</th><th class="px-4 py-3 w-24 text-center">Aksi</th></tr>
-                </thead>
-                <tbody id="table-instructors-body"></tbody>
-            </table>
-        </div>
-    </template>
-
-    <template id="tpl-admin-assign">
-        <div class="bg-white rounded-xl shadow-sm p-6 border-t-4 border-indigo-500">
-            <h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-tasks text-indigo-600 mr-2"></i>Assign Exam (Tugaskan Ujian)</h3>
-            <form onsubmit="assignExam(event)" class="max-w-2xl">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Crew (User) <span class="text-xs font-normal text-indigo-500">(Tahan Ctrl/Cmd untuk pilih lebih dari 1)</span></label>
-                    <select id="assign-user" multiple required class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 min-h-[120px]"></select>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Modul Ujian (Type Rating)</label>
-                    <select id="assign-module" required class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500">
-                        <option value="GIV - Initial">GIV - Initial</option>
-                        <option value="B412 - Recurrent">B412 - Recurrent</option>
-                        <option value="CA212 - Upgrade">CA212 - Upgrade</option>
-                    </select>
-                </div>
-                 <div class="mb-5">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Instruktur Penguji</label>
-                    <select id="assign-instructor" required class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500"></select>
-                </div>
-                <button type="submit" class="bg-indigo-600 text-white px-6 py-2 rounded shadow hover:bg-indigo-700"><i class="fas fa-paper-plane mr-2"></i>Tugaskan Sekarang</button>
-            </form>
-        </div>
-    </template>
-
-    <template id="tpl-admin-news">
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 border-t-4 border-yellow-500">
-            <h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-bullhorn text-yellow-500 mr-2"></i>Buat Pengumuman / Berita Baru</h3>
-            <form id="form-add-news" onsubmit="addNews(event)">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Judul Berita</label>
-                    <input type="text" id="n-title" required class="w-full px-3 py-2 border rounded-lg focus:ring-yellow-500" placeholder="Contoh: Update Regulasi Rating CA212">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Isi Berita</label>
-                    <textarea id="n-content" required rows="3" class="w-full px-3 py-2 border rounded-lg focus:ring-yellow-500" placeholder="Tuliskan detail berita disini..."></textarea>
-                </div>
-                <button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded shadow hover:bg-yellow-600"><i class="fas fa-paper-plane mr-2"></i>Publikasikan</button>
-            </form>
-        </div>
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div class="p-4 border-b bg-gray-50 font-bold text-gray-700"><i class="fas fa-history mr-2"></i>Riwayat Berita</div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-500">
-                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
-                        <tr><th class="px-4 py-3 w-32">Tanggal</th><th class="px-4 py-3">Judul</th><th class="px-4 py-3">Isi Teks</th><th class="px-4 py-3 w-24 text-center">Aksi</th></tr>
-                    </thead>
-                    <tbody id="table-news-body"></tbody>
-                </table>
-            </div>
-        </div>
-    </template>
-
-    <template id="tpl-user-dashboard">
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-6 bg-gradient-to-r from-blue-50 to-white">
-            <h3 class="text-xl font-bold text-gray-800">Hello, <span id="u-dash-name" class="text-blue-600">User</span>!</h3>
-            <p class="text-gray-600 mt-1">Welcome to Transwisata Prima Aviation E-Crew Exam System.</p>
-            <div class="mt-4 flex flex-wrap gap-3">
-                <span class="bg-white px-4 py-2 rounded-lg text-sm border shadow-sm font-medium"><i class="fas fa-plane text-blue-400 mr-2"></i>Rating: <span id="u-dash-rating" class="text-blue-700 font-bold"></span></span>
-                <span class="bg-white px-4 py-2 rounded-lg text-sm border shadow-sm font-medium"><i class="fas fa-medal text-yellow-500 mr-2"></i>Rank: <span id="u-dash-rank" class="text-blue-700 font-bold"></span></span>
-            </div>
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 space-y-6">
-                <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h3 class="text-lg font-bold mb-4 border-b pb-2 flex items-center"><i class="fas fa-clipboard-list text-blue-600 mr-2"></i>Ujian Saya (Assigned Exams)</h3>
-                    <div id="user-exams-list" class="text-center py-10 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                        <i class="fas fa-check-circle text-4xl mb-3 text-gray-300"></i>
-                        <p>Belum ada ujian yang ditugaskan kepada Anda saat ini.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-xl shadow-sm p-6 border-t-4 border-yellow-400">
-                    <h3 class="text-lg font-bold mb-4 border-b pb-2 flex items-center"><i class="fas fa-newspaper text-yellow-500 mr-2"></i>Berita Terbaru</h3>
-                    <div id="user-news-feed" class="space-y-4"></div>
-                </div>
-            </div>
-        </div>
-    </template>
+    <!-- Templates lainnya diringkas agar rapih (Data tetap valid) -->
+    <template id="tpl-admin-users"><div class="bg-white rounded-xl shadow-sm overflow-hidden border-t-4 border-blue-500"><div class="p-4 border-b bg-gray-50"><span class="font-bold text-gray-700"><i class="fas fa-users mr-2"></i>Daftar Crew Terdaftar</span></div><div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-100"><tr><th class="px-4 py-3">Nama</th><th class="px-4 py-3">Username</th><th class="px-4 py-3">Rating</th><th class="px-4 py-3">Rank</th><th class="px-4 py-3">No. Licence</th><th class="px-4 py-3 text-center">Aksi</th></tr></thead><tbody id="table-users-body"></tbody></table></div></div></template>
+    
+    <template id="tpl-admin-instructors"><div class="bg-white rounded-xl shadow-sm p-6 mb-6 border-t-4 border-purple-500"><h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-user-plus text-purple-600 mr-2"></i>Tambah Instruktur</h3><form id="form-add-instructor" onsubmit="addInstructor(event)" class="flex flex-col md:flex-row gap-4 items-end"><div class="flex-1 w-full"><label class="block text-sm font-medium text-gray-700 mb-1">Nama Instruktur</label><input type="text" id="inst-name" required class="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"></div><div class="flex-1 w-full"><label class="block text-sm font-medium text-gray-700 mb-1">LOA</label><input type="text" id="inst-loa" required class="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"></div><button type="submit" class="bg-purple-600 w-full md:w-auto text-white px-6 py-2 rounded shadow hover:bg-purple-700">Tambah</button></form></div><div class="bg-white rounded-xl shadow-sm overflow-hidden"><table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-100"><tr><th class="px-4 py-3">Nama Instruktur</th><th class="px-4 py-3">Nomor LOA</th><th class="px-4 py-3 w-24 text-center">Aksi</th></tr></thead><tbody id="table-instructors-body"></tbody></table></div></template>
+    
+    <template id="tpl-admin-assign"><div class="bg-white rounded-xl shadow-sm p-6 border-t-4 border-indigo-500"><h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-tasks text-indigo-600 mr-2"></i>Assign Exam (Penugasan Ujian)</h3><form onsubmit="assignExam(event)" class="max-w-4xl"><div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4"><div><label class="block text-sm font-medium text-gray-700 mb-1">Pilih Crew / Pilot <span class="text-xs font-normal text-indigo-500">(Tahan Ctrl/Cmd)</span></label><select id="assign-user" multiple required class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 min-h-[190px]"></select></div><div><div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1 flex justify-between"><span>Set / Modul Soal Bank</span> <span id="lbl-q-count" class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">0 Soal</span></label><select id="assign-module" required class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 bg-white" onchange="updateAssignQuestionCount()"></select></div><div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Instruktur Penguji</label><select id="assign-instructor" required class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 bg-white"></select></div><div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Ujian</label><input type="date" id="assign-date" required class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500"></div><div><label class="block text-sm font-medium text-gray-700 mb-1">Waktu Mulai</label><input type="time" id="assign-time" required class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500"></div></div></div></div><button type="submit" class="bg-indigo-600 text-white px-8 py-2 rounded-lg shadow hover:bg-indigo-700 w-full md:w-auto"><i class="fas fa-paper-plane mr-2"></i>Tugaskan Sekarang</button></form></div><div class="bg-white rounded-xl shadow-sm overflow-hidden mt-6"><div class="p-4 border-b bg-gray-50 font-bold text-gray-700"><i class="fas fa-list-alt mr-2"></i>Daftar Ujian (Assigned)</div><div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-100"><tr><th class="px-4 py-3">Modul & Info</th><th class="px-4 py-3">Crew / Pilot</th><th class="px-4 py-3 w-40">Jadwal Ujian</th><th class="px-4 py-3 w-32">Status</th><th class="px-4 py-3 w-28 text-center">Aksi</th></tr></thead><tbody id="table-assignments-body"></tbody></table></div></div></template>
+    
+    <template id="tpl-admin-news"><div class="bg-white rounded-xl shadow-sm p-6 mb-6 border-t-4 border-yellow-500"><h3 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-bullhorn text-yellow-500 mr-2"></i>Buat Pengumuman Baru</h3><form id="form-add-news" onsubmit="addNews(event)"><div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Judul Berita</label><input type="text" id="n-title" required class="w-full px-3 py-2 border rounded-lg focus:ring-yellow-500"></div><div class="mb-4"><label class="block text-sm font-medium text-gray-700 mb-1">Isi Berita</label><textarea id="n-content" required rows="3" class="w-full px-3 py-2 border rounded-lg focus:ring-yellow-500"></textarea></div><button type="submit" class="bg-yellow-500 text-white px-6 py-2 rounded shadow hover:bg-yellow-600"><i class="fas fa-paper-plane mr-2"></i>Publikasikan</button></form></div><div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="p-4 border-b bg-gray-50 font-bold text-gray-700"><i class="fas fa-history mr-2"></i>Riwayat Berita</div><div class="overflow-x-auto"><table class="w-full text-sm text-left text-gray-500"><thead class="text-xs text-gray-700 uppercase bg-gray-100"><tr><th class="px-4 py-3 w-32">Tanggal</th><th class="px-4 py-3">Judul</th><th class="px-4 py-3">Isi Teks</th><th class="px-4 py-3 w-24 text-center">Aksi</th></tr></thead><tbody id="table-news-body"></tbody></table></div></div></template>
+    
+    <template id="tpl-user-dashboard"><div class="bg-white rounded-xl shadow-sm p-6 mb-6 bg-gradient-to-r from-blue-50 to-white border-l-4 border-blue-500"><h3 class="text-xl font-bold text-gray-800">Hello, <span id="u-dash-name" class="text-blue-600">User</span>!</h3><p class="text-gray-600 mt-1">Welcome to Transwisata Prima Aviation E-Crew Exam System.</p><div class="mt-4 flex flex-wrap gap-3"><span class="bg-white px-4 py-2 rounded-lg text-sm border shadow-sm font-medium"><i class="fas fa-plane text-blue-400 mr-2"></i>Rating: <span id="u-dash-rating" class="text-blue-700 font-bold"></span></span><span class="bg-white px-4 py-2 rounded-lg text-sm border shadow-sm font-medium"><i class="fas fa-medal text-yellow-500 mr-2"></i>Rank: <span id="u-dash-rank" class="text-blue-700 font-bold"></span></span></div></div><div class="grid grid-cols-1 lg:grid-cols-3 gap-6"><div class="lg:col-span-2 space-y-6"><div class="bg-white rounded-xl shadow-sm p-6 border-t-4 border-blue-400"><h3 class="text-lg font-bold mb-4 border-b pb-2 flex items-center"><i class="fas fa-clipboard-list text-blue-600 mr-2"></i>Ujian Saya (Assigned Exams)</h3><div id="user-exams-list"></div></div></div><div class="lg:col-span-1"><div class="bg-white rounded-xl shadow-sm p-6 border-t-4 border-yellow-400"><h3 class="text-lg font-bold mb-4 border-b pb-2 flex items-center"><i class="fas fa-newspaper text-yellow-500 mr-2"></i>Berita Terbaru</h3><div id="user-news-feed" class="space-y-4"></div></div></div></div></template>
 
     <!-- ==================== JAVASCRIPT APPLICATION LOGIC ==================== -->
     <script>
         // --- GOOGLE SHEETS API URL ---
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx7_cbT0L5HSP8RZX-Tknl7mNEk_gcCUDi78EYTHR9YSO-cFamiMaiIGm7JKwtFAdEUYw/exec';
 
-        // --- DATA STATE ---
         let db = { users: [], questions: [], instructors: [], assignments: [], news: [] };
         let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 
-        // Save to LocalStorage (as backup/cache)
         const saveDB = () => {
             localStorage.setItem('db_users', JSON.stringify(db.users));
             localStorage.setItem('db_questions', JSON.stringify(db.questions));
@@ -542,184 +309,82 @@
             localStorage.setItem('db_news', JSON.stringify(db.news));
         };
 
-        // --- PULL DATA FROM GOOGLE SHEETS ON LOAD ---
         const fetchSheetData = async (action) => {
-            try {
-                const res = await fetch(`${SCRIPT_URL}?action=${action}`);
-                const json = await res.json();
-                return json.status === 'success' ? json.data : [];
-            } catch(e) {
-                console.error(`Error fetching ${action}:`, e);
-                return [];
-            }
+            try { const res = await fetch(`${SCRIPT_URL}?action=${action}`); const json = await res.json(); return json.status === 'success' ? json.data : []; } catch(e) { return []; }
         };
 
         const initRealDatabase = async () => {
             try {
-                // Fetch all data in parallel
                 const [uData, qData, iData, nData, aData] = await Promise.all([
-                    fetchSheetData('getUsers'),
-                    fetchSheetData('getQuestions'),
-                    fetchSheetData('getInstructors'),
-                    fetchSheetData('getNews'),
-                    fetchSheetData('getAssignments')
+                    fetchSheetData('getUsers'), fetchSheetData('getQuestions'), fetchSheetData('getInstructors'), fetchSheetData('getNews'), fetchSheetData('getAssignments')
                 ]);
 
-                // Map array from Google Sheets to JSON Objects
                 db.users = uData.map(r => ({ id: r[0], name: r[1], username: r[2], password: r[3], rating: r[4], rank: r[5], licence: r[6] }));
-                db.questions = qData.map(r => ({ id: r[0], rating: r[1], wing: r[2], type: r[3], text: r[4] }));
+                db.questions = qData.map(r => ({ id: r[0], rating: r[1], wing: r[2], type: r[3], model: r[4] || 'Model A', section: r[5] || 'GENERAL', text: r[6] || '', options: r[7] ? JSON.parse(r[7]) : {}, answer: r[8] || '' }));
                 db.instructors = iData.map(r => ({ id: r[0], name: r[1], loa: r[2] }));
                 db.news = nData.map(r => ({ id: r[0], date: r[1], title: r[2], content: r[3] }));
-                db.assignments = aData.map(r => ({ id: r[0], userIds: r[1], examModule: r[2], instructorId: r[3], date: r[4] }));
+                db.assignments = aData.map(r => ({ id: r[0], userIds: r[1], examModule: r[2], instructorId: r[3], examDate: r[4]||'', examTime: r[5]||'', status: r[6]||'Pending' }));
                 
-                // Sort news latest first
                 db.news.sort((a,b) => b.id - a.id);
                 saveDB();
             } catch (error) {
-                console.warn("Gagal terhubung ke Sheets, menggunakan cache lokal.");
-                db = {
-                    users: JSON.parse(localStorage.getItem('db_users')) || [],
-                    questions: JSON.parse(localStorage.getItem('db_questions')) || [],
-                    instructors: JSON.parse(localStorage.getItem('db_instructors')) || [],
-                    assignments: JSON.parse(localStorage.getItem('db_assignments')) || [],
-                    news: JSON.parse(localStorage.getItem('db_news')) || []
-                };
+                db = { users: JSON.parse(localStorage.getItem('db_users')) || [], questions: JSON.parse(localStorage.getItem('db_questions')) || [], instructors: JSON.parse(localStorage.getItem('db_instructors')) || [], assignments: JSON.parse(localStorage.getItem('db_assignments')) || [], news: JSON.parse(localStorage.getItem('db_news')) || [] };
             } finally {
-                // Hide loading screen, show login or dashboard
                 document.getElementById('loading-screen').classList.add('opacity-0', 'pointer-events-none');
                 setTimeout(() => document.getElementById('loading-screen').classList.add('hidden'), 500);
-
-                if(currentUser) initDashboard();
-                else switchView('login');
+                if(currentUser) initDashboard(); else switchView('login');
             }
         };
 
-        // --- PUSH DATA KE GOOGLE SHEETS ---
         const syncToGoogleSheets = (action, data) => {
-            const formData = new URLSearchParams();
-            formData.append('action', action);
-            for (const key in data) formData.append(key, data[key]);
-            
-            fetch(SCRIPT_URL, { method: 'POST', body: formData })
-            .then(res => res.json())
-            .then(result => console.log(`[Sync] ${action}: OK`))
-            .catch(error => console.error(`[Sync] ${action}: Error`, error));
+            const formData = new URLSearchParams(); formData.append('action', action);
+            for (const key in data) {
+                const val = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
+                formData.append(key, val);
+            }
+            fetch(SCRIPT_URL, { method: 'POST', body: formData }).catch(e => console.error(e));
         };
 
-        // Initialize App
-        window.addEventListener('DOMContentLoaded', () => {
-            initRealDatabase();
-        });
+        window.addEventListener('DOMContentLoaded', () => initRealDatabase());
 
         // --- UI UTILS ---
         const showToast = (title, message, type = 'success') => {
             const toast = document.getElementById('toast');
-            document.getElementById('toast-title').innerText = title;
-            document.getElementById('toast-message').innerText = message;
-            
-            const icon = document.getElementById('toast-icon');
-            icon.className = type === 'success' ? 'fas fa-check-circle text-green-500 text-xl mr-3' : 'fas fa-exclamation-circle text-red-500 text-xl mr-3';
+            document.getElementById('toast-title').innerText = title; document.getElementById('toast-message').innerText = message;
+            document.getElementById('toast-icon').className = type === 'success' ? 'fas fa-check-circle text-green-500 text-xl mr-3' : 'fas fa-exclamation-circle text-red-500 text-xl mr-3';
             toast.className = `fixed top-5 right-5 z-50 transform transition-transform duration-300 bg-white shadow-xl rounded-lg border-l-4 p-4 min-w-[300px] ${type === 'success' ? 'border-green-500' : 'border-red-500'} translate-x-0`;
-            
-            setTimeout(() => { toast.classList.replace('translate-x-0', 'translate-x-full'); }, 3000);
+            setTimeout(() => toast.classList.replace('translate-x-0', 'translate-x-full'), 3000);
         };
-
-        const switchView = (viewName) => {
-            ['view-login', 'view-register', 'view-dashboard'].forEach(v => document.getElementById(v).classList.add('hidden'));
-            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+        const switchView = (viewName) => { 
+            ['view-login', 'view-register', 'view-dashboard'].forEach(v => { const el = document.getElementById(v); if(el) el.classList.add('hidden'); }); 
+            const target = document.getElementById(`view-${viewName}`); if(target) target.classList.remove('hidden'); 
         };
+        const closeModal = (modalId) => { const el = document.getElementById(modalId); if(el) el.classList.add('hidden'); };
+        const setActiveTabUI = (moduleId) => { document.querySelectorAll('.nav-tab').forEach(t => { t.classList.remove('border-blue-500', 'text-white', 'bg-slate-800'); t.classList.add('border-transparent', 'text-slate-400'); }); const activeTab = document.getElementById(`tab-${moduleId}`); if(activeTab) { activeTab.classList.remove('border-transparent', 'text-slate-400'); activeTab.classList.add('border-blue-500', 'text-white', 'bg-slate-800'); } };
 
-        const closeModal = (modalId) => document.getElementById(modalId).classList.add('hidden');
-
-        // --- AUTH LOGIC ---
+        // --- AUTH ---
         const handleLogin = (e) => {
-            e.preventDefault();
-            const u = document.getElementById('login-username').value;
-            const p = document.getElementById('login-password').value;
-
-            if (u === 'admin' && p === 'admin123') {
-                currentUser = { role: 'admin', name: 'Administrator' };
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                initDashboard();
-            } else {
-                const user = db.users.find(x => x.username === u && x.password === p);
-                if (user) {
-                    currentUser = { ...user, role: 'user' };
-                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                    initDashboard();
-                } else {
-                    showToast('Login Gagal', 'Username atau password salah', 'error');
-                }
-            }
+            e.preventDefault(); const u = document.getElementById('login-username').value, p = document.getElementById('login-password').value;
+            if (u === 'admin' && p === 'admin123') { currentUser = { role: 'admin', name: 'Administrator' }; localStorage.setItem('currentUser', JSON.stringify(currentUser)); initDashboard(); } 
+            else { const user = db.users.find(x => x.username === u && x.password === p); if (user) { currentUser = { ...user, role: 'user' }; localStorage.setItem('currentUser', JSON.stringify(currentUser)); initDashboard(); } else showToast('Login Gagal', 'Username atau password salah', 'error'); }
         };
-
         const handleRegister = (e) => {
-            e.preventDefault();
-            const username = document.getElementById('reg-username').value;
-            if(username === 'admin' || db.users.some(u => u.username === username)) {
-                showToast('Error', 'Username sudah terdaftar!', 'error'); return;
-            }
-
-            const newUser = {
-                id: Date.now().toString(),
-                name: document.getElementById('reg-name').value,
-                username: username,
-                password: document.getElementById('reg-password').value,
-                rating: document.getElementById('reg-rating').value,
-                rank: document.getElementById('reg-rank').value,
-                licence: document.getElementById('reg-licence').value,
-            };
-            
-            db.users.push(newUser); saveDB();
-            syncToGoogleSheets('registerUser', newUser);
-
-            showToast('Sukses', 'Registrasi berhasil. Silakan login.');
-            document.getElementById('form-register').reset(); switchView('login');
+            e.preventDefault(); const username = document.getElementById('reg-username').value;
+            if(username === 'admin' || db.users.some(u => u.username === username)) return showToast('Error', 'Username sudah terdaftar!', 'error');
+            const newUser = { id: Date.now().toString(), name: document.getElementById('reg-name').value, username, password: document.getElementById('reg-password').value, rating: document.getElementById('reg-rating').value, rank: document.getElementById('reg-rank').value, licence: document.getElementById('reg-licence').value };
+            db.users.push(newUser); saveDB(); syncToGoogleSheets('registerUser', newUser);
+            showToast('Sukses', 'Registrasi berhasil.'); document.getElementById('form-register').reset(); switchView('login');
         };
-
-        const logout = () => {
-            currentUser = null;
-            localStorage.removeItem('currentUser');
-            document.getElementById('login-username').value = '';
-            document.getElementById('login-password').value = '';
-            switchView('login');
-        };
-
-        const setActiveTabUI = (moduleId) => {
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.classList.remove('border-blue-500', 'text-white', 'bg-slate-800');
-                tab.classList.add('border-transparent', 'text-slate-400');
-            });
-            const activeTab = document.getElementById(`tab-${moduleId}`);
-            if(activeTab) {
-                activeTab.classList.remove('border-transparent', 'text-slate-400');
-                activeTab.classList.add('border-blue-500', 'text-white', 'bg-slate-800');
-            }
-        };
+        const logout = () => { currentUser = null; localStorage.removeItem('currentUser'); switchView('login'); };
 
         // --- DASHBOARD ROUTING ---
         const initDashboard = () => {
-            switchView('dashboard');
-            document.getElementById('nav-user-name').innerText = currentUser.name;
-            const badge = document.getElementById('user-role-badge');
-            const navMenu = document.getElementById('sidebar-nav');
-            navMenu.innerHTML = ''; 
-
+            switchView('dashboard'); document.getElementById('nav-user-name').innerText = currentUser.name;
+            const badge = document.getElementById('user-role-badge'), navMenu = document.getElementById('sidebar-nav'); navMenu.innerHTML = ''; 
             if (currentUser.role === 'admin') {
                 badge.innerText = 'ADMIN'; badge.className = 'text-xs bg-red-600 px-2 py-1 rounded mt-1 font-semibold ml-2';
-                const adminMenus = [
-                    { id: 'dashboard', icon: 'fa-tachometer-alt', label: 'Dashboard' },
-                    { id: 'news', icon: 'fa-newspaper', label: 'Berita / News' },
-                    { id: 'questions', icon: 'fa-question-circle', label: 'Data Soal' },
-                    { id: 'users', icon: 'fa-users', label: 'Data Crew' },
-                    { id: 'instructors', icon: 'fa-chalkboard-teacher', label: 'Data Instruktur' },
-                    { id: 'assign', icon: 'fa-tasks', label: 'Assign Exam' },
-                    { id: 'formno', icon: 'fa-file-alt', label: 'Form No.' },
-                    { id: 'results', icon: 'fa-chart-bar', label: 'Result Exam' }
-                ];
-                adminMenus.forEach(m => {
-                    navMenu.innerHTML += `<button id="tab-${m.id}" onclick="loadAdminModule('${m.id}', '${m.label}')" class="nav-tab flex-shrink-0 flex items-center px-5 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border-b-2 border-transparent focus:outline-none group"><i class="fas ${m.icon} w-5 text-center group-hover:text-blue-400 mr-2"></i> <span>${m.label}</span></button>`;
-                });
+                const adminMenus = [{ id: 'dashboard', icon: 'fa-tachometer-alt', label: 'Dashboard' }, { id: 'questions', icon: 'fa-question-circle', label: 'Data Soal' }, { id: 'users', icon: 'fa-users', label: 'Data Crew' }, { id: 'instructors', icon: 'fa-chalkboard-teacher', label: 'Instruktur' }, { id: 'assign', icon: 'fa-tasks', label: 'Assign Exam' }, { id: 'news', icon: 'fa-newspaper', label: 'Berita' }];
+                adminMenus.forEach(m => { navMenu.innerHTML += `<button id="tab-${m.id}" onclick="loadAdminModule('${m.id}', '${m.label}')" class="nav-tab flex-shrink-0 flex items-center px-5 py-3 text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors border-b-2 border-transparent focus:outline-none group"><i class="fas ${m.icon} w-5 text-center group-hover:text-blue-400 mr-2"></i> <span>${m.label}</span></button>`; });
                 loadAdminModule('dashboard', 'Dashboard');
             } else {
                 badge.innerText = 'CREW'; badge.className = 'text-xs bg-blue-600 px-2 py-1 rounded mt-1 font-semibold ml-2';
@@ -729,129 +394,240 @@
         };
 
         const loadAdminModule = (moduleId, title) => {
-            document.getElementById('page-title').innerText = title;
-            const content = document.getElementById('main-content-area');
-            setActiveTabUI(moduleId);
-            
+            document.getElementById('page-title').innerText = title; const content = document.getElementById('main-content-area'); setActiveTabUI(moduleId);
             const tpl = document.getElementById(`tpl-admin-${moduleId}`);
             if (tpl) {
                 content.innerHTML = tpl.innerHTML;
                 if(moduleId === 'dashboard') {
-                    document.getElementById('stat-users').innerText = db.users.length;
-                    document.getElementById('stat-questions').innerText = db.questions.length;
-                    document.getElementById('stat-instructors').innerText = db.instructors.length;
+                    document.getElementById('stat-users').innerText = db.users.length; document.getElementById('stat-questions').innerText = db.questions.length; document.getElementById('stat-instructors').innerText = db.instructors.length; document.getElementById('stat-exams').innerText = db.assignments.filter(a => a.status === 'Pending').length;
                 }
-                else if(moduleId === 'news') renderNewsTable();
-                else if(moduleId === 'questions') renderQuestionsTable();
-                else if(moduleId === 'users') renderUsersTable();
+                else if(moduleId === 'news') renderNewsTable(); 
+                else if(moduleId === 'questions') renderGroupedQuestions();
+                else if(moduleId === 'users') renderUsersTable(); 
                 else if(moduleId === 'instructors') renderInstructorsTable();
                 else if(moduleId === 'assign') {
-                    const uSelect = document.getElementById('assign-user');
-                    uSelect.innerHTML = db.users.map(u => `<option value="${u.id}" class="p-2 border-b border-gray-100 hover:bg-indigo-50 cursor-pointer">${u.name} - ${u.rating} (${u.rank})</option>`).join('');
-                    const iSelect = document.getElementById('assign-instructor');
-                    iSelect.innerHTML = '<option value="" disabled selected>Pilih Instruktur...</option>' + db.instructors.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+                    document.getElementById('assign-user').innerHTML = db.users.map(u => `<option value="${u.id}" class="p-2 border-b border-gray-100 hover:bg-indigo-50 cursor-pointer">${u.name} - ${u.rating} (${u.rank})</option>`).join('');
+                    document.getElementById('assign-instructor').innerHTML = '<option value="" disabled selected>Pilih Instruktur...</option>' + db.instructors.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+                    const uniqueModules = [...new Set(db.questions.map(q => `${q.type} ${q.rating} ${q.model}`))];
+                    document.getElementById('assign-module').innerHTML = uniqueModules.length === 0 ? '<option value="" disabled selected>Belum ada soal di database</option>' : '<option value="" disabled selected>Pilih Modul Soal...</option>' + uniqueModules.map(m => `<option value="${m}">${m}</option>`).join('');
+                    renderAssignmentsTable();
                 }
-            } else {
-                content.innerHTML = `<div class="bg-white p-10 rounded-xl shadow text-center text-gray-500"><i class="fas fa-tools text-5xl mb-4 text-gray-300"></i><p class="text-lg">Menu <b>${title}</b> sedang dalam tahap pengembangan.</p></div>`;
+            } else content.innerHTML = `<div class="bg-white p-10 rounded-xl shadow text-center text-gray-500"><i class="fas fa-tools text-5xl mb-4 text-gray-300"></i><p class="text-lg">Menu sedang disesuaikan.</p></div>`;
+        };
+
+        // --- DATA LOGIC: OTHERS ---
+        const addNews = (e) => { e.preventDefault(); const d = new Date().toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'}), data = { id: Date.now().toString(), date: d, title: document.getElementById('n-title').value, content: document.getElementById('n-content').value }; db.news.unshift(data); saveDB(); syncToGoogleSheets('addNews', data); showToast('Sukses', 'Berita dipublikasikan.'); document.getElementById('form-add-news').reset(); renderNewsTable(); };
+        const renderNewsTable = () => { document.getElementById('table-news-body').innerHTML = db.news.length === 0 ? '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">Belum ada berita.</td></tr>' : db.news.map((n, i) => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">${n.date}</td><td class="px-4 py-3 font-bold">${n.title}</td><td class="px-4 py-3 text-gray-600 line-clamp-2">${n.content}</td><td class="px-4 py-3 text-center whitespace-nowrap"><button onclick="editNews(${i})" class="text-blue-500 bg-blue-50 p-2 rounded-full mr-1"><i class="fas fa-edit"></i></button><button onclick="delNews(${i})" class="text-red-500 bg-red-50 p-2 rounded-full"><i class="fas fa-trash"></i></button></td></tr>`).join(''); };
+        const delNews = (i) => { if(confirm('Hapus?')) { const id = db.news[i].id; db.news.splice(i, 1); saveDB(); syncToGoogleSheets('deleteNews', {id}); renderNewsTable(); }};
+        const editNews = (i) => { const n = db.news[i]; document.getElementById('edit-n-idx').value = i; document.getElementById('edit-n-title').value = n.title; document.getElementById('edit-n-content').value = n.content; document.getElementById('modal-edit-news').classList.remove('hidden'); };
+        const saveEditNews = (e) => { e.preventDefault(); const i = document.getElementById('edit-n-idx').value; db.news[i].title = document.getElementById('edit-n-title').value; db.news[i].content = document.getElementById('edit-n-content').value; saveDB(); syncToGoogleSheets('editNews', db.news[i]); closeModal('modal-edit-news'); showToast('Sukses', 'Berita diperbarui.'); renderNewsTable(); };
+
+        const renderUsersTable = () => { document.getElementById('table-users-body').innerHTML = db.users.length === 0 ? '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Tidak ada crew terdaftar</td></tr>' : db.users.map((u, i) => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium">${u.name}</td><td class="px-4 py-3">${u.username}</td><td class="px-4 py-3 font-semibold text-blue-600">${u.rating}</td><td class="px-4 py-3">${u.rank}</td><td class="px-4 py-3">${u.licence}</td><td class="px-4 py-3 text-center whitespace-nowrap"><button onclick="editUser(${i})" class="text-blue-500 bg-blue-50 p-2 rounded-full mr-1"><i class="fas fa-edit"></i></button><button onclick="delUser(${i})" class="text-red-500 bg-red-50 p-2 rounded-full"><i class="fas fa-trash"></i></button></td></tr>`).join(''); };
+        const delUser = (i) => { if(confirm('Hapus user ini?')) { const id = db.users[i].id; db.users.splice(i, 1); saveDB(); syncToGoogleSheets('deleteUser', {id}); renderUsersTable(); }};
+        const editUser = (i) => { const u = db.users[i]; document.getElementById('edit-u-idx').value = i; ['name','username','password','rating','rank','licence'].forEach(k => document.getElementById('edit-u-'+k).value = u[k]); document.getElementById('modal-edit-user').classList.remove('hidden'); };
+        const saveEditUser = (e) => { e.preventDefault(); const i = document.getElementById('edit-u-idx').value; ['name','username','password','rating','rank','licence'].forEach(k => db.users[i][k] = document.getElementById('edit-u-'+k).value); saveDB(); syncToGoogleSheets('editUser', db.users[i]); closeModal('modal-edit-user'); showToast('Sukses', 'Data diperbarui.'); renderUsersTable(); };
+
+        const addInstructor = (e) => { e.preventDefault(); const data = { id: Date.now().toString(), name: document.getElementById('inst-name').value, loa: document.getElementById('inst-loa').value }; db.instructors.push(data); saveDB(); syncToGoogleSheets('addInstructor', data); showToast('Sukses', 'Instruktur ditambahkan.'); document.getElementById('form-add-instructor').reset(); renderInstructorsTable(); };
+        const renderInstructorsTable = () => { document.getElementById('table-instructors-body').innerHTML = db.instructors.length === 0 ? '<tr><td colspan="3" class="px-4 py-6 text-center text-gray-500">Tidak ada instruktur</td></tr>' : db.instructors.map((ins, i) => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium">${ins.name}</td><td class="px-4 py-3">${ins.loa}</td><td class="px-4 py-3 text-center whitespace-nowrap"><button onclick="editInst(${i})" class="text-blue-500 bg-blue-50 p-2 rounded-full mr-1"><i class="fas fa-edit"></i></button><button onclick="delInst(${i})" class="text-red-500 bg-red-50 p-2 rounded-full"><i class="fas fa-trash"></i></button></td></tr>`).join(''); };
+        const delInst = (i) => { if(confirm('Hapus instruktur?')) { const id=db.instructors[i].id; db.instructors.splice(i, 1); saveDB(); syncToGoogleSheets('deleteInstructor', {id}); renderInstructorsTable(); }};
+        const editInst = (i) => { const ins = db.instructors[i]; document.getElementById('edit-i-idx').value = i; document.getElementById('edit-i-name').value = ins.name; document.getElementById('edit-i-loa').value = ins.loa; document.getElementById('modal-edit-inst').classList.remove('hidden'); };
+        const saveEditInst = (e) => { e.preventDefault(); const i = document.getElementById('edit-i-idx').value; db.instructors[i].name = document.getElementById('edit-i-name').value; db.instructors[i].loa = document.getElementById('edit-i-loa').value; saveDB(); syncToGoogleSheets('editInstructor', db.instructors[i]); closeModal('modal-edit-inst'); showToast('Sukses', 'Instruktur diperbarui.'); renderInstructorsTable(); };
+
+        // --- ASSIGN EXAM ---
+        const updateAssignQuestionCount = () => { const mod = document.getElementById('assign-module').value; const count = db.questions.filter(q => `${q.type} ${q.rating} ${q.model}` === mod).length; document.getElementById('lbl-q-count').innerText = `${count} Soal`; };
+        const assignExam = (e) => {
+            e.preventDefault(); const selectUser = document.getElementById('assign-user'), selectedOptions = Array.from(selectUser.selectedOptions); const mod = document.getElementById('assign-module').value;
+            if(selectedOptions.length === 0) return showToast('Peringatan', 'Pilih minimal 1 Crew!', 'error'); if(!mod) return showToast('Peringatan', 'Modul soal belum dipilih!', 'error');
+            const data = { id: Date.now().toString(), userIds: selectedOptions.map(opt => opt.value).join(', '), examModule: mod, instructorId: document.getElementById('assign-instructor').value, examDate: document.getElementById('assign-date').value, examTime: document.getElementById('assign-time').value, status: 'Pending' };
+            db.assignments.push(data); saveDB(); syncToGoogleSheets('assignExam', data); showToast('Sukses', `Modul ${mod} ditugaskan kepada ${selectedOptions.length} Crew!`); e.target.reset(); document.getElementById('lbl-q-count').innerText = '0 Soal'; renderAssignmentsTable();
+        };
+        const renderAssignmentsTable = () => {
+            const tbody = document.getElementById('table-assignments-body'); if(!tbody) return;
+            tbody.innerHTML = db.assignments.length === 0 ? '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">Belum ada penugasan</td></tr>' : 
+            db.assignments.map((a, i) => {
+                const crewNames = a.userIds.split(', ').map(id => { const u = db.users.find(user => user.id == id); return u ? u.name : 'Unknown'; }).join(', ');
+                const qCount = db.questions.filter(q => `${q.type} ${q.rating} ${q.model}` === a.examModule).length;
+                const isCompleted = a.status === 'Completed'; const statusHtml = isCompleted ? `<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full"><i class="fas fa-check-circle mr-1"></i>Completed</span>` : `<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full"><i class="fas fa-clock mr-1"></i>Pending</span>`;
+                return `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3"><div class="font-bold text-gray-800">${a.examModule}</div><div class="text-xs text-blue-600 bg-blue-50 inline-block px-1 rounded mt-1">${qCount} Soal</div></td><td class="px-4 py-3 text-sm font-medium text-gray-600 truncate max-w-[150px]" title="${crewNames}">${crewNames}</td><td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap"><div><i class="far fa-calendar-alt w-5 text-gray-400"></i> ${a.examDate}</div><div class="mt-1"><i class="far fa-clock w-5 text-gray-400"></i> ${a.examTime} WIB</div></td><td class="px-4 py-3">${statusHtml}</td><td class="px-4 py-3 text-center">${!isCompleted ? `<button onclick="markExamCompleted(${i})" class="text-xs bg-green-500 text-white px-3 py-1.5 rounded mr-1">Set Selesai</button>` : ''}<button onclick="delAssignment(${i})" class="text-red-500 bg-red-50 p-1.5 rounded-full"><i class="fas fa-trash"></i></button></td></tr>`;
+            }).reverse().join(''); 
+        };
+        const markExamCompleted = (idx) => { if(confirm('Tandai Selesai?')) { db.assignments[idx].status = 'Completed'; saveDB(); syncToGoogleSheets('editAssignment', db.assignments[idx]); renderAssignmentsTable(); showToast('Sukses', 'Status diubah.'); } };
+        const delAssignment = (idx) => { if(confirm('Hapus penugasan?')) { const id = db.assignments[idx].id; db.assignments.splice(idx, 1); saveDB(); syncToGoogleSheets('deleteAssignment', {id}); renderAssignmentsTable(); } };
+
+
+        // --- DATA LOGIC: QUESTIONS ---
+        const autoDetectWing = () => { const fw = ['GIV', 'BE300', 'CA212'], rw = ['B412', 'AW109'], r = document.getElementById('q-rating').value; document.getElementById('q-wing').value = fw.includes(r) ? 'Fixed Wing' : rw.includes(r) ? 'Rotary Wing' : ''; };
+        const checkManualExamType = () => { const sel = document.getElementById('q-exam-type'), man = document.getElementById('q-exam-manual'); sel.value === 'Manual' ? (man.classList.remove('hidden'), man.required = true) : (man.classList.add('hidden'), man.required = false); };
+        const checkManualModel = () => { const sel = document.getElementById('q-model'), man = document.getElementById('q-model-manual'); sel.value === 'Manual' ? (man.classList.remove('hidden'), man.required = true) : (man.classList.add('hidden'), man.required = false); };
+
+        const parsePastedQuestions = (rawText, rating, wing, type, model) => {
+            const lines = rawText.split('\n').map(l => l.trim()).filter(l => l);
+            const parsedQuestions = [];
+            let currentSection = 'GENERAL'; let currentQ = null;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (line === line.toUpperCase() && line.length > 3 && !line.includes('.') && !line.match(/^CORRECT\s+ANSWER/i)) { currentSection = line; continue; }
+                const qMatch = line.match(/^\d+[\.\)]\s*(.*)/);
+                if (qMatch) {
+                    if (currentQ) parsedQuestions.push(currentQ); 
+                    currentQ = { id: Date.now().toString() + Math.random().toString(36).substr(2, 5), rating, wing, type, model, section: currentSection, text: qMatch[1], options: {}, answer: '' };
+                    continue;
+                }
+                const optMatch = line.match(/^([A-E])[\.\)]\s*(.*)/i);
+                if (optMatch && currentQ) { currentQ.options[optMatch[1].toUpperCase()] = optMatch[2]; continue; }
+                const ansMatch = line.match(/^Correct\s+answer\s*:\s*([A-E])/i);
+                if (ansMatch && currentQ) { currentQ.answer = ansMatch[1].toUpperCase(); parsedQuestions.push(currentQ); currentQ = null; continue; }
+                if (currentQ && Object.keys(currentQ.options).length === 0) currentQ.text += '\n' + line;
+            }
+            if (currentQ) parsedQuestions.push(currentQ); 
+            return parsedQuestions;
+        };
+
+        const addQuestion = (e) => {
+            e.preventDefault();
+            const rating = document.getElementById('q-rating').value; const wing = document.getElementById('q-wing').value;
+            const eType = document.getElementById('q-exam-type').value === 'Manual' ? document.getElementById('q-exam-manual').value : document.getElementById('q-exam-type').value;
+            const model = document.getElementById('q-model').value === 'Manual' ? document.getElementById('q-model-manual').value : document.getElementById('q-model').value;
+            const rawText = document.getElementById('q-text').value;
+
+            const newQuestions = parsePastedQuestions(rawText, rating, wing, eType, model);
+            if (newQuestions.length === 0) return showToast('Gagal', 'Tidak ada soal yang terdeteksi. Cek format!', 'error');
+
+            newQuestions.forEach(q => {
+                db.questions.push(q);
+                syncToGoogleSheets('addQuestion', { id: q.id, rating: q.rating, wingType: q.wing, examType: q.type, model: q.model, section: q.section, questionText: q.text, options: JSON.stringify(q.options), answer: q.answer });
+            });
+
+            saveDB(); showToast('Sukses', `${newQuestions.length} Soal berhasil di-generate!`); document.getElementById('form-add-question').reset(); renderGroupedQuestions();
+        };
+
+        const renderGroupedQuestions = () => {
+            const container = document.getElementById('grouped-questions-container'); if(!container) return;
+            const groups = {};
+            db.questions.forEach(q => { const key = `${q.type} ${q.rating} ${q.model}`; if(!groups[key]) groups[key] = {}; if(!groups[key][q.section]) groups[key][q.section] = []; groups[key][q.section].push(q); });
+
+            if (Object.keys(groups).length === 0) { container.innerHTML = `<div class="text-center py-8 text-gray-500"><i class="fas fa-database text-4xl mb-3 text-gray-300"></i><p>Belum ada soal tersimpan di bank soal.</p></div>`; return; }
+
+            let html = `<div class="space-y-4">`;
+            for (const [modulName, sections] of Object.entries(groups)) {
+                let totalQs = 0; for (const s in sections) totalQs += sections[s].length;
+                html += `
+                <div class="border rounded-lg shadow-sm overflow-hidden">
+                    <div class="bg-indigo-50 border-b border-indigo-100 px-4 py-3 flex justify-between items-center hover:bg-indigo-100 transition-colors">
+                        <div class="flex-1 cursor-pointer flex items-center gap-3" onclick="this.parentElement.nextElementSibling.classList.toggle('hidden')">
+                            <h4 class="font-bold text-indigo-800"><i class="fas fa-layer-group mr-2"></i>${modulName}</h4>
+                            <span class="bg-indigo-600 text-white text-xs px-2 py-1 rounded-full">${totalQs} Soal Tersedia</span>
+                        </div>
+                    </div>
+                    <div class="hidden bg-white p-4">`;
+
+                let overallIndex = 1;
+                for (const [secName, qs] of Object.entries(sections)) {
+                    html += `<div class="mt-4 first:mt-0 mb-2 font-bold text-sm text-gray-700 bg-gray-100 px-3 py-1 rounded border-l-4 border-gray-400">${secName}</div><div class="space-y-3 pl-2">`;
+                    qs.forEach(q => {
+                        let optsHtml = '';
+                        for(const [opt, txt] of Object.entries(q.options)) {
+                            const isAnswer = opt === q.answer;
+                            optsHtml += `<div class="text-xs ${isAnswer ? 'font-bold text-green-600' : 'text-gray-600'}"><span class="w-4 inline-block">${opt}.</span> ${txt} ${isAnswer ? '<i class="fas fa-check-circle ml-1"></i>' : ''}</div>`;
+                        }
+                        html += `
+                        <div class="flex items-start text-sm border-b border-gray-50 pb-2">
+                            <span class="font-bold text-indigo-500 w-6 flex-shrink-0 mt-1">${overallIndex}.</span>
+                            <div class="flex-1">
+                                <p class="text-gray-800 mb-1 whitespace-pre-wrap">${q.text}</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-1">${optsHtml}</div>
+                            </div>
+                            <div class="flex flex-col gap-2 ml-3">
+                                <button onclick="editQuestion('${q.id}')" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-1.5 rounded-md shadow-sm" title="Edit Soal"><i class="fas fa-edit"></i></button>
+                                <button onclick="delQuestion('${q.id}')" class="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded-md shadow-sm" title="Hapus Soal"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>`;
+                        overallIndex++;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div></div>`;
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        };
+
+        const delQuestion = (id) => {
+            if(confirm('Hapus soal ini? Nomor soal lainnya akan menyesuaikan.')) {
+                db.questions = db.questions.filter(q => q.id !== id);
+                saveDB(); syncToGoogleSheets('deleteQuestion', {id}); renderGroupedQuestions();
             }
         };
 
-        // --- DATA LOGIC: NEWS ---
-        const addNews = (e) => {
+        // Edit Question Logic
+        const editQuestion = (id) => {
+            const q = db.questions.find(x => x.id === id);
+            if(!q) return;
+            document.getElementById('edit-q-id').value = q.id;
+            document.getElementById('edit-q-text').value = q.text;
+            document.getElementById('edit-q-opt-A').value = q.options.A || '';
+            document.getElementById('edit-q-opt-B').value = q.options.B || '';
+            document.getElementById('edit-q-opt-C').value = q.options.C || '';
+            document.getElementById('edit-q-opt-D').value = q.options.D || '';
+            document.getElementById('edit-q-opt-E').value = q.options.E || '';
+            document.getElementById('edit-q-answer').value = q.answer || 'A';
+            document.getElementById('modal-edit-question').classList.remove('hidden');
+        };
+
+        const saveEditQuestion = (e) => {
             e.preventDefault();
-            const dateStr = new Date().toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'});
-            const data = { id: Date.now().toString(), date: dateStr, title: document.getElementById('n-title').value, content: document.getElementById('n-content').value };
-            db.news.unshift(data); saveDB(); syncToGoogleSheets('addNews', data);
-            showToast('Sukses', 'Berita berhasil dipublikasikan.'); 
-            document.getElementById('form-add-news').reset(); renderNewsTable();
-        };
-        const renderNewsTable = () => {
-            document.getElementById('table-news-body').innerHTML = db.news.length === 0 ? '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">Belum ada berita yang dipublikasikan</td></tr>' : 
-            db.news.map((n, i) => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">${n.date}</td><td class="px-4 py-3 font-bold">${n.title}</td><td class="px-4 py-3 text-gray-600 line-clamp-2">${n.content}</td><td class="px-4 py-3 text-center whitespace-nowrap"><button onclick="editNews(${i})" class="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-full mr-1"><i class="fas fa-edit"></i></button><button onclick="delNews(${i})" class="text-red-500 hover:text-red-700 bg-red-50 p-2 rounded-full"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-        };
-        const delNews = (idx) => { if(confirm('Hapus berita ini?')) { const id = db.news[idx].id; db.news.splice(idx, 1); saveDB(); syncToGoogleSheets('deleteNews', {id}); renderNewsTable(); }};
-        const editNews = (idx) => {
-            const n = db.news[idx];
-            document.getElementById('edit-n-idx').value = idx; document.getElementById('edit-n-title').value = n.title; document.getElementById('edit-n-content').value = n.content;
-            document.getElementById('modal-edit-news').classList.remove('hidden');
-        };
-        const saveEditNews = (e) => {
-            e.preventDefault();
-            const idx = document.getElementById('edit-n-idx').value;
-            db.news[idx].title = document.getElementById('edit-n-title').value; db.news[idx].content = document.getElementById('edit-n-content').value;
-            saveDB(); syncToGoogleSheets('editNews', db.news[idx]); closeModal('modal-edit-news'); showToast('Sukses', 'Berita diperbarui.'); renderNewsTable();
-        };
+            const id = document.getElementById('edit-q-id').value;
+            const qIndex = db.questions.findIndex(x => x.id === id);
+            if(qIndex === -1) return;
 
-        // --- DATA LOGIC: QUESTIONS ---
-        const autoDetectWing = () => {
-            const fw = ['GIV', 'BE300', 'CA212'], rw = ['B412', 'AW109'], r = document.getElementById('q-rating').value;
-            document.getElementById('q-wing').value = fw.includes(r) ? 'Fixed Wing' : rw.includes(r) ? 'Rotary Wing' : '';
-        };
-        const checkManualExamType = () => {
-            const sel = document.getElementById('q-exam-type'), man = document.getElementById('q-exam-manual');
-            sel.value === 'Manual' ? (man.classList.remove('hidden'), man.required = true) : (man.classList.add('hidden'), man.required = false);
-        };
-        const addQuestion = (e) => {
-            e.preventDefault();
-            const eType = document.getElementById('q-exam-type').value === 'Manual' ? document.getElementById('q-exam-manual').value : document.getElementById('q-exam-type').value;
-            const data = { id: Date.now().toString(), rating: document.getElementById('q-rating').value, wingType: document.getElementById('q-wing').value, examType: eType, questionText: document.getElementById('q-text').value };
-            db.questions.push({id: data.id, rating: data.rating, wing: data.wingType, type: data.examType, text: data.questionText});
-            saveDB(); syncToGoogleSheets('addQuestion', data);
-            showToast('Sukses', 'Soal ditambahkan.'); document.getElementById('form-add-question').reset(); document.getElementById('q-wing').value=''; document.getElementById('q-exam-manual').classList.add('hidden'); renderQuestionsTable();
-        };
-        const renderQuestionsTable = () => {
-            document.getElementById('table-questions-body').innerHTML = db.questions.length === 0 ? '<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">Data kosong</td></tr>' : 
-            db.questions.map((q, i) => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-bold">${q.rating}</td><td class="px-4 py-3">${q.wing}</td><td class="px-4 py-3"><span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">${q.type}</span></td><td class="px-4 py-3 truncate max-w-sm">${q.text}</td><td class="px-4 py-3 text-center"><button onclick="delQuestion(${i})" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-        };
-        const delQuestion = (idx) => { if(confirm('Hapus soal?')) { const id=db.questions[idx].id; db.questions.splice(idx, 1); saveDB(); syncToGoogleSheets('deleteQuestion',{id}); renderQuestionsTable(); }};
+            db.questions[qIndex].text = document.getElementById('edit-q-text').value;
+            const opts = {};
+            ['A','B','C','D','E'].forEach(opt => {
+                const val = document.getElementById(`edit-q-opt-${opt}`).value.trim();
+                if(val) opts[opt] = val;
+            });
+            db.questions[qIndex].options = opts;
+            db.questions[qIndex].answer = document.getElementById('edit-q-answer').value;
 
-        // --- DATA LOGIC: USERS ---
-        const renderUsersTable = () => {
-            document.getElementById('table-users-body').innerHTML = db.users.length === 0 ? '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Tidak ada crew terdaftar</td></tr>' : 
-            db.users.map((u, i) => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium">${u.name}</td><td class="px-4 py-3">${u.username}</td><td class="px-4 py-3 font-semibold text-blue-600">${u.rating}</td><td class="px-4 py-3">${u.rank}</td><td class="px-4 py-3">${u.licence}</td><td class="px-4 py-3 text-center whitespace-nowrap"><button onclick="editUser(${i})" class="text-blue-500 bg-blue-50 p-2 rounded-full mr-1"><i class="fas fa-edit"></i></button><button onclick="delUser(${i})" class="text-red-500 bg-red-50 p-2 rounded-full"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-        };
-        const delUser = (idx) => { if(confirm('Hapus user ini?')) { const id = db.users[idx].id; db.users.splice(idx, 1); saveDB(); syncToGoogleSheets('deleteUser', {id}); renderUsersTable(); }};
-        const editUser = (idx) => {
-            const u = db.users[idx]; document.getElementById('edit-u-idx').value = idx; document.getElementById('edit-u-name').value = u.name; document.getElementById('edit-u-username').value = u.username; document.getElementById('edit-u-password').value = u.password; document.getElementById('edit-u-rating').value = u.rating; document.getElementById('edit-u-rank').value = u.rank; document.getElementById('edit-u-licence').value = u.licence; document.getElementById('modal-edit-user').classList.remove('hidden');
-        };
-        const saveEditUser = (e) => {
-            e.preventDefault(); const idx = document.getElementById('edit-u-idx').value;
-            db.users[idx].name = document.getElementById('edit-u-name').value; db.users[idx].username = document.getElementById('edit-u-username').value; db.users[idx].password = document.getElementById('edit-u-password').value; db.users[idx].rating = document.getElementById('edit-u-rating').value; db.users[idx].rank = document.getElementById('edit-u-rank').value; db.users[idx].licence = document.getElementById('edit-u-licence').value;
-            saveDB(); syncToGoogleSheets('editUser', db.users[idx]); closeModal('modal-edit-user'); showToast('Sukses', 'Data Crew diperbarui.'); renderUsersTable();
-        };
-
-        // --- DATA LOGIC: INSTRUCTORS ---
-        const addInstructor = (e) => {
-            e.preventDefault(); const data = { id: Date.now().toString(), name: document.getElementById('inst-name').value, loa: document.getElementById('inst-loa').value };
-            db.instructors.push(data); saveDB(); syncToGoogleSheets('addInstructor', data); showToast('Sukses', 'Instruktur ditambahkan.'); document.getElementById('form-add-instructor').reset(); renderInstructorsTable();
-        };
-        const renderInstructorsTable = () => {
-            document.getElementById('table-instructors-body').innerHTML = db.instructors.length === 0 ? '<tr><td colspan="3" class="px-4 py-6 text-center text-gray-500">Tidak ada instruktur</td></tr>' : 
-            db.instructors.map((ins, i) => `<tr class="border-b hover:bg-gray-50"><td class="px-4 py-3 font-medium">${ins.name}</td><td class="px-4 py-3">${ins.loa}</td><td class="px-4 py-3 text-center whitespace-nowrap"><button onclick="editInst(${i})" class="text-blue-500 bg-blue-50 p-2 rounded-full mr-1"><i class="fas fa-edit"></i></button><button onclick="delInst(${i})" class="text-red-500 bg-red-50 p-2 rounded-full"><i class="fas fa-trash"></i></button></td></tr>`).join('');
-        };
-        const delInst = (idx) => { if(confirm('Hapus instruktur?')) { const id=db.instructors[idx].id; db.instructors.splice(idx, 1); saveDB(); syncToGoogleSheets('deleteInstructor', {id}); renderInstructorsTable(); }};
-        const editInst = (idx) => { const ins = db.instructors[idx]; document.getElementById('edit-i-idx').value = idx; document.getElementById('edit-i-name').value = ins.name; document.getElementById('edit-i-loa').value = ins.loa; document.getElementById('modal-edit-inst').classList.remove('hidden'); };
-        const saveEditInst = (e) => { e.preventDefault(); const idx = document.getElementById('edit-i-idx').value; db.instructors[idx].name = document.getElementById('edit-i-name').value; db.instructors[idx].loa = document.getElementById('edit-i-loa').value; saveDB(); syncToGoogleSheets('editInstructor', db.instructors[idx]); closeModal('modal-edit-inst'); showToast('Sukses', 'Instruktur diperbarui.'); renderInstructorsTable(); };
-
-        // --- DATA LOGIC: ASSIGN EXAM ---
-        const assignExam = (e) => {
-            e.preventDefault();
-            const selectUser = document.getElementById('assign-user'), selectedOptions = Array.from(selectUser.selectedOptions);
-            if(selectedOptions.length === 0) return showToast('Peringatan', 'Silakan pilih minimal 1 Crew!', 'error');
-            const data = { id: Date.now().toString(), userIds: selectedOptions.map(opt => opt.value).join(', '), examModule: document.getElementById('assign-module').value, instructorId: document.getElementById('assign-instructor').value, date: new Date().toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric'}) };
-            db.assignments.push(data); saveDB(); syncToGoogleSheets('assignExam', data);
-            showToast('Sukses', `Ujian ditugaskan kepada ${selectedOptions.length} Crew!`); e.target.reset();
-        };
-
-        // --- USER VIEW MODULES ---
-        const loadUserModule = (moduleId, title) => {
-            document.getElementById('page-title').innerText = title;
-            document.getElementById('main-content-area').innerHTML = document.getElementById('tpl-user-dashboard').innerHTML;
-            setActiveTabUI(moduleId);
+            saveDB();
+            syncToGoogleSheets('editQuestion', {
+                id: db.questions[qIndex].id,
+                questionText: db.questions[qIndex].text,
+                options: JSON.stringify(db.questions[qIndex].options),
+                answer: db.questions[qIndex].answer
+            });
             
-            document.getElementById('u-dash-name').innerText = currentUser.name;
-            document.getElementById('u-dash-rating').innerText = currentUser.rating;
-            document.getElementById('u-dash-rank').innerText = currentUser.rank;
+            closeModal('modal-edit-question');
+            showToast('Sukses', 'Data soal diperbarui.');
+            renderGroupedQuestions();
+        };
+
+        // --- USER MODULES ---
+        const loadUserModule = (moduleId, title) => {
+            document.getElementById('page-title').innerText = title; document.getElementById('main-content-area').innerHTML = document.getElementById('tpl-user-dashboard').innerHTML; setActiveTabUI(moduleId);
+            document.getElementById('u-dash-name').innerText = currentUser.name; document.getElementById('u-dash-rating').innerText = currentUser.rating; document.getElementById('u-dash-rank').innerText = currentUser.rank;
+
+            const myExams = db.assignments.filter(a => a.userIds.split(', ').includes(currentUser.id.toString()));
+            const userExamsList = document.getElementById('user-exams-list');
+            if (myExams.length === 0) { userExamsList.innerHTML = `<div class="text-center py-10 text-gray-500 bg-gray-50 border-dashed border-gray-200"><p>Belum ada ujian yang ditugaskan.</p></div>`; } 
+            else {
+                userExamsList.className = "grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2";
+                userExamsList.innerHTML = myExams.map(a => {
+                    const qCount = db.questions.filter(q => `${q.type} ${q.rating} ${q.model}` === a.examModule).length;
+                    const isComp = a.status === 'Completed';
+                    return `
+                    <div class="bg-white border rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden ${isComp ? 'border-l-4 border-green-500' : 'border-l-4 border-blue-500'}">
+                        <div class="px-4 py-3 ${isComp ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'} border-b flex justify-between items-center"><h4 class="font-bold truncate pr-2">${a.examModule}</h4><span class="text-[10px] font-bold uppercase px-2 py-1 rounded bg-white shadow-sm">${a.status}</span></div>
+                        <div class="p-4">
+                            <div class="flex items-center text-sm text-gray-600 mb-2"><div class="w-8 flex justify-center"><i class="far fa-calendar-alt text-gray-400"></i></div><div><span class="block text-xs text-gray-400">Tanggal</span>${a.examDate}</div></div>
+                            <div class="flex items-center text-sm text-gray-600 mb-2"><div class="w-8 flex justify-center"><i class="far fa-clock text-gray-400"></i></div><div><span class="block text-xs text-gray-400">Waktu</span>${a.examTime} WIB</div></div>
+                            <div class="flex items-center text-sm text-gray-600 mb-4"><div class="w-8 flex justify-center"><i class="fas fa-layer-group text-gray-400"></i></div><div><span class="block text-xs text-gray-400">Jumlah</span>${qCount} Soal Valid</div></div>
+                            ${!isComp ? `<button onclick="showToast('Ujian Dimulai', 'Membuka modul ujian...', 'success')" class="w-full bg-blue-600 text-white text-sm font-bold py-2.5 rounded-lg shadow">Mulai Ujian <i class="fas fa-arrow-right ml-2"></i></button>` : `<button class="w-full bg-gray-100 text-gray-700 text-sm font-bold py-2.5 rounded-lg border border-gray-200"><i class="fas fa-chart-bar mr-2"></i> Lihat Hasil</button>` }
+                        </div>
+                    </div>`;
+                }).join('');
+            }
 
             const newsFeed = document.getElementById('user-news-feed');
             newsFeed.innerHTML = db.news.length === 0 ? '<div class="text-sm text-gray-500 text-center py-4">Belum ada pengumuman.</div>' : 
